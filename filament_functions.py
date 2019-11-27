@@ -1,8 +1,27 @@
 import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 import parse_star
 
-def reset_tilt(starfile_path, plot_changes = False):
+def fit_tilt(starfile_path, plot_changes = False, save_changes = True):
+
+    filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
+
+    for filament_number in range(filament_data.number_of_filaments):
+
+        original_tilt_angles = filament_data.getNumpyFilamentColumn(filament_number, 'rlnAngleTilt')
+
+        tilt_median = np.full(len(original_tilt_angles), np.median(original_tilt_angles), dtype = 'float16')
+
+        filament_data.addFilamentDataColumn(tilt_median, 'rlnAngletilt')
+
+        star_savefilename = args.fit_tilt[:-5] + '_fittilt'
+
+    write_star(star_savefilename,MetaDataLabels,[ptcl for MT in MTs for ptcl in MT])
+
+
+def reset_tilt(starfile_path, plot_changes = False, save_changes = True):
 
     loaded_data = parse_star.readFilamentsFromStarFile(starfile_path)
 
@@ -25,8 +44,6 @@ def make_superparticles(starfile_path, window_size):
     particles = parse_star.readBlockDataFromStarfile(starfile_path)
 
     particles_ordered_on_rot = sorted(particles.particle_data_block, key = lambda x:x[particles.headers['rlnAngleRot']])
-
-    
 
 def plot_changes():
     pass
