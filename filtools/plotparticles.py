@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot
 from matplotlib.backends.backend_pdf import PdfPages
 
-import parse_star
+from filtools import parse_star
 
 def plot_changes():
     pass
