@@ -1,28 +1,48 @@
 import numpy as np
+import EMAN2 as eman2
 
-from filtools import parse_star
+from filtools import parse_star, parse_mrc
 
 def make_superparticles(starfile_path, window_size):
-
-    quit()
-
-    #from EMAN2 import *
 
     print('This function will make superparticles from this starfile: ' + starfile_path+', and will use a windowing size of ' + str(window_size)+' particles')
     print('The make superparticles function should be run from your RELION directory to ensure folders are made in sensible places')
 
     particles = parse_star.readBlockDataFromStarfile(starfile_path)
 
-    particles_ordered_on_rot = sorted(particles.particle_data_block, key = lambda x:x[particles.headers['rlnAngleRot']])
+    #sort the particles based on their rot angle
+    sorted_particles = sorted(list(zip(*particles.particle_data_block)), key = lambda x: float(x[particles.headers['rlnAngleRot']]))
+    particles.particle_data_block = list(zip(*sorted_particles))
 
-    try:
-        mkdir('%s' % args.outpath)
-        mkdir('%s/Particles' % args.outpath)
-    except OSError:
-        rmtree('%s' % args.outpath)
-        mkdir('%s' % args.outpath)
-        mkdir('%s/Particles' % args.outpath)
+    #Need some code to make the folders etc
 
+    for particle_num in range(particles.number_of_particles):
+
+        particle_names = particles.particle_data_block[particles.headers['rlnImageName']][particle_num:particle_num+window_size]
+
+        #Extremely confusing code that just tries to load the newest particle into memory
+        try:
+            binary_particles.addImage(particle_names[particle_num+window_size])
+        except NameError:
+            for name in particle_names:
+                try:
+                    binary_particles.addImage(name)
+                except NameError:
+                    binary_particles = parse_mrc.readMRCfileNumpy(name)
+
+        binary_particles.sumLoadedImages()
+        binary_particles.saveSummedImage()
+        binary_particles.closeImage(0)
+
+
+        try:
+            superparticle_imageNames.append(particle.headers['rlnImageName'][:-5]+'_SP.star')
+        except NameError:
+            superparticle_imageNames = [particle.headers['rlnImageName'][:-5]+'_SP.star']
+
+    #particles.addColumntoBlockData(superparticle_imageNames, 'rlnImageName')
+
+        '''
     mgphs=[mgph for mgph in group(ptcls,mgphIDX)]
 
     for mhIDX,mgph in enumerate(mgphs):
@@ -70,6 +90,4 @@ def make_superparticles(starfile_path, window_size):
 
     ptcls=[ptcl for mgph in mgphs for ptcl in mgph]
     write_star('%s/superparticles.star' % args.outpath,MetaDataLabels,ptcls)
-
-def doNothing():
-    pass
+    '''
