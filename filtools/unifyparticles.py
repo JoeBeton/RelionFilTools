@@ -1,8 +1,14 @@
 import numpy as np
+from math import isnan
 
 from filtools import parse_star
+from utils.plotfit import *
 
 def unify_tilt(starfile_path, plot_changes = False, save_changes = True):
+    '''
+    Super basic function that resets all tilt angles such that they equal the
+    median tilt angle
+    '''
 
     filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
 
@@ -11,12 +17,15 @@ def unify_tilt(starfile_path, plot_changes = False, save_changes = True):
         original_tilt_angles = filament_data.getNumpyFilamentColumn(filament_no, 'rlnAngleTilt')
         tilt_median = np.full(len(original_tilt_angles), np.median(original_tilt_angles), dtype = 'float16')
 
-        filament_data.addFilamentDataColumn(filament_no, tilt_median, 'rlnAngletilt')
+        filament_data.addFilamentDataColumn(filament_no, tilt_median, 'rlnAngleTilt')
 
     filament_data.writeFilamentsToStarFile()
 
 
 def reset_tilt(starfile_path, plot_changes = False, save_changes = True):
+    '''
+    Function to reset the tilt values for all particles to 90 degrees
+    '''
 
     filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
 
@@ -33,20 +42,23 @@ def reset_tilt(starfile_path, plot_changes = False, save_changes = True):
     if plot_changes:
         plot_changes()
 
-#This functions works but is very slow and too much is hardcoded in
-def unify_rot(starfile_path, plot_changes = False, save_changes = True):
+def unify_rot(starfile_path, twist, rise = 4.75, apix = 1.05 plot_changes = False):
+    '''
+    Function that fits the rot angles for all filaments - VERY slow at the moment
+    '''
+
+    initial_gradient = twist/
 
     filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
-
+    print('Filaments with less than 5 particles will be removed')
+    filament_data.removeShortFilaments(5)
     print('There are %s filaments to process' % filament_data.number_of_filaments)
 
-    np_lin_reg = np.vectorize(linearRegression, otypes = [float])
+    m_list = np.linspace(-0.2, 0.2, 40)
 
-    for filament_no in range(filament_data.number_of_filaments):
+    #np_lin_reg = np.vectorize(linearRegression, otypes = [float])
 
-        #My horrible attempt to optimise a plot for the Rot angles
-        mgphID=re.search(mgre,MT[0][mgphIDX]).group(0)[:-4]
-        ptclNum=len(MT)
+    for filament_no in range(6500,7500,1):
 
         rot_angles = filament_data.getNumpyFilamentColumn(filament_no, 'rlnAngleRot')
         rln_score = filament_data.getNumpyFilamentColumn(filament_no, 'rlnMaxValueProbDistribution')
@@ -55,49 +67,95 @@ def unify_rot(starfile_path, plot_changes = False, save_changes = True):
         xsh = filament_data.getNumpyFilamentColumn(filament_no, 'rlnOriginXAngst')
         ysh = filament_data.getNumpyFilamentColumn(filament_no, 'rlnOriginYAngst')
 
-        #find the best linear plot with a gradient of 4 by changing the y-intercept
-        search_limit = ptclNum*(vector[1]*0.1*2)
-        y_intercepts = np.arange((-180-search_limit),(180+search_limit),0.1)
+        print('Rot angles:')
+        print(rot_angles)
 
+        #This makes everything take ages but is necessary
+        number_of_particles = len(ysh)
+        search_limit = number_of_particles*(tracklength[1]*0.1*2)
+
+        #find the best linear plot with a gradient of 4 by changing the y-intercept
+        search_limit = number_of_particles*(tracklength[1]*0.1*2)
+        y_intercepts = np.arange((-180 - search_limit),(180 + search_limit),0.1)
         #Exhaustive search for gradient 4 and -4:
-        pos_m4_search = exhaustiveLinearSearch(0.1, y_intercepts, vector, rot_angles, rln_score, 4)
-        neg_m4_search = exhaustiveLinearSearch(-0.1, y_intercepts, vector, rot_angles, rln_score, 4)
+        pos_m4_search = exhaustiveLinearSearch(0.1, y_intercepts, tracklength, rot_angles, rln_score, 4)
+        neg_m4_search = exhaustiveLinearSearch(-0.1, y_intercepts, tracklength, rot_angles, rln_score, 4)
 
         top_scored_plots = np.concatenate((pos_m4_search[-20:], neg_m4_search[-20:]))
         top_y_intercepts = np.hsplit(top_scored_plots,2)[0]
 
-        best_plot = optimiseLinearGradient(m_list,top_y_intercepts, vector, rot_angles, rln_score, 4)
+        best_plot = optimiseLinearGradient(m_list,top_y_intercepts, tracklength, rot_angles, rln_score, 4)
 
         best_gradient = best_plot[0]
         y_intercept = best_plot[1]
 
-        line_of_best_fit = np_lin_reg(vector,y_intercept,best_gradient)
+        line_of_best_fit = linRegress(tracklength,y_intercept,best_gradient)
 
-        adjusted_rot_angles = adjustAngletoLOBF(line_of_best_fit, rot_angles)
+        adjusted_rot_angles = adjustAngletoLOBF(line_of_best_fit, rot_angles, 4)
 
-        ##### Using the updated rot angles to adjust the x and y shifts
-        twist, rise, pixel_size = np.full(len(rot_angles),(-0.5)), np.full(len(rot_angles), (4.7)), np.full(len(rot_angles), 1.05)
-
-        delta_rot = np.subtract(np.absolute(rot_angles), np.absolute(adjusted_rot_angles))
-
-        delta_shift_x = np.divide(delta_rot, (np.multiply(twist, rise, np.cos(np.radians(psi_angles)))))
-        delta_shift_y = np.divide(delta_rot, (np.multiply(twist, rise, np.cos(np.radians(psi_angles)))))
-
-        scaled_delta_shift_x = np.divide(delta_shift_x, pixel_size)
-        scaled_delta_shift_y = np.divide(delta_shift_y, pixel_size)
-
-        fixed_x = np.add(xsh, scaled_delta_shift_x)
-        fixed_y = np.add(ysh, scaled_delta_shift_y)
-
-        for num, i in enumerate(sort_array):
-            MTs[mtIDX][num][rotIDX]=adjusted_rot_angles[i]
-            MTs[mtIDX][num][xshIDX]=fixed_x[i]
-            MTs[mtIDX][num][yshIDX]=fixed_y[i]
-            #MTs[mtIDX][i][xshIDX]=uniX[i]
-            #MTs[mtIDX][i][yshIDX]=uniY[i]
-            ptclID=re.search(pcre,MTs[mtIDX][i][imgeIDX]).group(0)[:-1]
+        filament_data.addFilamentDataColumn(filament_no, adjusted_rot_angles, 'rlnAngleRot')
 
         if filament_no % 100 == 0:
             print('Tube %s completed' % (filament_no))
+
+    filament_data.writeFilamentsToStarFile()
+
+def unifyXY(starfile_path, plot_changes = False, rot_outliers = []):
+    '''
+    Fairly basic function to fit the x and y shifts using a polynomial
+
+    Need to implement selective changes i.e. only changing particles that are
+    outliers
+    '''
+
+    filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
+
+    for filament_no in range(filament_data.number_of_filaments):
+
+        xsh = filament_data.getNumpyFilamentColumn(filament_no, 'rlnOriginXAngst')
+        ysh = filament_data.getNumpyFilamentColumn(filament_no, 'rlnOriginYAngst')
+        tracklength = filament_data.getNumpyFilamentColumn(filament_no, 'rlnHelicalTrackLengthAngst')
+
+        if len(rot_outliers) > 1:
+            #Do the selective changes
+            pass
+        else:
+            uniX, uniY = fitPolynomial(Xsh,Ysh,xax)
+
+        #Checks if the "flatten and cluster" function failed - in which case the shifts are all 'nan'
+        if math.isnan(uniX[1]):
+            uniX = Xsh
+        if math.isnan(uniY[1]):
+            uniY = Ysh
+
+        filament_data.addFilamentDataColumn(filament_no, uniX, 'rlnOriginXAngst')
+        filament_data.addFilamentDataColumn(filament_no, uniY, 'rlnOriginYAngst')
+
+    filament_data.writeFilamentsToStarFile()
+
+
+def unify_psi(starfile_path, plot_changes = False):
+
+    filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
+
+    for filament_no in range(filament_data.number_of_filaments):
+
+        psi_original = filament_data.getNumpyFilamentColumn(filament_no, 'rlnAnglePsi')
+        relion_score = filament_data.getNumpyFilamentColumn(filament_no, 'rlnMaxValueProbDistribution')
+        tracklength = filament_data.getNumpyFilamentColumn(filament_no, 'rlnHelicalTrackLengthAngst')
+
+        psi_low_bound = sorted(psi_original)[0]
+        psi_high_bound = sorted(psi_original)[-1]
+        psi_low_bound_search = np.arange(psi_low_bound, psi_low_bound + 20, 0.5)
+        psi_high_bound_search = np.arange(psi_high_bound-20, psi_high_bound)
+        y_intercepts = np.concatenate(psi_low_bound_search, psi_high_bound_search)
+
+        sorted_plots = exhaustiveLinearSearch(0, y_intercepts, tracklength, psi_original, rln_score_unsorted, 5)
+
+        best_plot = sorted_plots[-1]
+
+        unified_psi_angles = adjustAngletoLOBF(line_of_best_fit, rot_angles, 5)
+
+        filament_data.addFilamentDataColumn(filament_no, unified_psi_angles, 'rlnAnglePsi')
 
     filament_data.writeFilamentsToStarFile()
