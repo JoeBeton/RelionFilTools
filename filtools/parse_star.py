@@ -84,7 +84,9 @@ class readFilamentsFromStarFile(object):
                 #Sort the particles based on helical track tracklength
                 #Note: the zip() function rearranges the list into a more numpy like
                 #structure: i.e. columns can be easily indexed using array[i] for i'th column
-                sorted_particles = sorted([micrograph_data[i] for i in particle_position_list], key = lambda x:x[self.headers['rlnHelicalTrackLengthAngst']])
+                sorted_particles = sorted([micrograph_data[i] for i in particle_position_list], key = lambda x: float(x[self.headers['rlnHelicalTrackLengthAngst']]))
+                #particles = [micrograph_data[i] for i in particle_position_list]
+
                 sorted_structured_particles = list(zip(*sorted_particles))
 
                 self.filaments[self.number_of_filaments] = sorted_structured_particles
@@ -125,6 +127,29 @@ class readFilamentsFromStarFile(object):
 
         self.new_data_headers[name_of_altered_data_column] = new_column_number
         self.filaments[filament_number] = filament_data
+
+    def removeShortFilaments(self, minimum_filament_length, verbose = False):
+
+        '''Remove filaments with less than specified number of particles '''
+
+        if verbose:
+            print('There are %i filaments in the input star file' % self.number_of_filaments)
+
+        for fil_no in range(self.number_of_filaments):
+            if len(self.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')) < minimum_filament_length:
+                del self.filaments[fil_no]
+
+        #remake the filaments dictionary with sequential keys
+        temp_filaments = {}
+        self.number_of_filaments = 0
+        for num, key in enumerate(sorted(self.filaments.keys())):
+            temp_filaments[num] = self.filaments[key]
+            self.number_of_filaments += 1
+
+        self.filaments = temp_filaments
+
+        if verbose:
+            print('There are %i filaments in the saved star file' % self.number_of_filaments)
 
     def writeFilamentsToStarFile(self, save_updated_data = True):
 
@@ -188,12 +213,13 @@ class readBlockDataFromStarfile(object):
     This would also be used for standard single particle projects'''
 
     def __init__(self, filename, headers = {}, optics_info = [],
-    particle_data_block = [], new_data_headers = {}):
+    particle_data_block = [], new_data_headers = {}, number_of_particles = 0):
         self.filename = filename
         self.headers = headers
         self.optics_info = optics_info
         self.particle_data_block = particle_data_block
         self.new_data_headers = new_data_headers
+        self.number_of_particles = number_of_particles
 
         self.loadBlockDataFromStar()
 
@@ -235,6 +261,7 @@ class readBlockDataFromStarfile(object):
                     temp_data_block.append(line.split())
                 except NameError:
                     temp_data_block = [line.split()]
+                self.number_of_particles += 1
 
         #Makes a multidimensional array that can be easily indexed for sepecific columns
         self.particle_data_block = list(zip(*temp_data_block))
