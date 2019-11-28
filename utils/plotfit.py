@@ -4,29 +4,31 @@ import numpy as np
 def linRegress(x,y,m):
     return np.add(y, np.multiply(m,x))
 
-def removeBigGaps(difference_calculation, search_range):
-    return [x for x in gaps if x < search_range]
+def removeBigGaps(gaps, search_range):
+    return np.array([x if x < search_range else np.nan for x in gaps])
 
-def correctAngles(fitted_angle): # think this is redundant now as I don't bother making everything positive
-    if fitted_angle > 180:
-        fitted_angle = fitted_angle - 360
-    elif fitted_angle < -180:
-        fitted_angle = fitted_angle + 360
+def fixrotAngles(fitted_angles):
 
-    return fitted_angle
+    for particle_angle in fitted_angles:
+        if particle_angle > 180:
+            particle_angle = particle_angle - 360
+        elif particle_angle < -180:
+            particle_angle = particle_angle + 360
+
+    return fitted_angles
 
 def exhaustiveLinearSearch(m, y_intercepts, x_values, angles, rln_score, search_range):
 
-    #np_remove_gaps = np.vectorize(removeBigGaps, otypes = [float])
-
     for y in y_intercepts:
         plot_line = linRegress(x_values,y,m)
-        distance_between_points = np.absolute(np.subtract(angles,plot_line))
-        remove_big_gaps = removeBigGaps(distance_between_points, search_range)
+        residuals = np.absolute(np.subtract(angles,plot_line))
+        remove_big_gaps = removeBigGaps(residuals, search_range)
         invert_score = np.reciprocal(remove_big_gaps)
-        scored_errors = np.multiply(invert_score, np.sqrt(rln_score))
+        scored_errors = np.multiply(invert_score, rln_score)
+        #print('Scored Errors:')
+        #print(scored_errors)
         sum_error = np.nansum(scored_errors) * len(scored_errors[~np.isnan(scored_errors)])
-
+        #print(sum_error)
         if sum_error != 0:
             try:
                 score_y = np.concatenate((score_y, [[y,sum_error]]), axis = 0)
@@ -41,15 +43,14 @@ def optimiseLinearGradient(m_list, y_intercepts, vector, rot_angles, rln_score, 
 
     for m in m_list:
         for y in y_intercepts:
-            plot_line = np_lin_reg(vector,y,m)
+            plot_line = linRegress(vector,y,m)
             error = np.absolute(np.subtract(rot_angles,plot_line))
-            remove_big_gaps = np_remove_gaps(error, search_range)
+            remove_big_gaps = removeBigGaps(error, search_range)
             invert_score = np.reciprocal(remove_big_gaps)
             scored_errors = np.multiply(remove_big_gaps, np.sqrt(rln_score))
             sum_error = np.nansum(scored_errors) * len(scored_errors[~np.isnan(scored_errors)])
 
             if sum_error != 0:
-
                 try:
                     score_y = np.concatenate((score_y, [[m,y,sum_error]]), axis = 0)
                 except NameError:
@@ -85,3 +86,20 @@ def fitPolynomial(x_shifts, y_shifts, p_nums, plot = False):
             plt.show()
 
     return uniX, uniY
+
+def adjustAngletoLOBF(line_of_best_fit, rot_angles, search_range):
+    '''
+    Ajusts outlier particles (those that lie outside the search window) to the
+    line of best fit - also should keep track of the change in angle
+    '''
+
+    angle_change_to_optimum = np.subtract(rot_angles, line_of_best_fit)
+    outlier_particle_positions = [num for num, i in enumerate(angle_change_to_optimum) if i > search_range]
+
+    for particle_no in outlier_particle_positions:
+
+        rot_angles[particle_no] = line_of_best_fit[particle_no]
+
+    corrected_adjusted_angles = fixrotAngles(rot_angles)
+
+    return corrected_adjusted_angles
