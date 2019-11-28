@@ -2,7 +2,7 @@ import numpy as np
 
 
 def linRegress(x,y,m):
-    return np.add(y, np.multiply(m,x))
+    return np.add(np.multiply(m,x), y)
 
 def removeBigGaps(gaps, search_range):
     return np.array([x if x < search_range else np.nan for x in gaps])
@@ -93,7 +93,7 @@ def adjustAngletoLOBF(line_of_best_fit, rot_angles, search_range):
     line of best fit - also should keep track of the change in angle
     '''
 
-    angle_change_to_optimum = np.subtract(rot_angles, line_of_best_fit)
+    angle_change_to_optimum = np.abs(np.subtract(rot_angles, line_of_best_fit))
     outlier_particle_positions = [num for num, i in enumerate(angle_change_to_optimum) if i > search_range]
 
     for particle_no in outlier_particle_positions:

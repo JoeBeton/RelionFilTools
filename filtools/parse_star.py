@@ -105,13 +105,13 @@ class readFilamentsFromStarFile(object):
         single filament '''
 
         try:
-            return np.array(self.filaments[filament_number][self.headers[header_name]], dtype = 'float16')
+            return np.array(self.filaments[filament_number][self.headers[header_name]], dtype = 'float32')
         except ValueError:
             return np.array(self.filaments[filament_number][self.headers[header_name]])
 
     def getStringListFilamentColumn(self, filament_number, header_name):
 
-        '''Returns a list which contains the column data as a list of strings'''
+        '''Returns the column data as a list of strings'''
 
         return [str(i) for i in self.filaments[filament_number][self.headers[header_name]]]
 
@@ -184,7 +184,7 @@ class readFilamentsFromStarFile(object):
                     write_star.write(str(i + '\n'))
                 write_star.write(str('\n'))
 
-            write_star.write(str('\n ' + self.star_comments[0] + ' \n\n_data_particles\n\n_loop\n'))
+            write_star.write(str('\n ' + self.star_comments[0] + ' \n\ndata_particles\n\nloop_\n'))
 
             #Write out the header info using the ordered_header_list
             for number, header in enumerate(ordered_header_list):
@@ -199,6 +199,7 @@ class readFilamentsFromStarFile(object):
                     all_filament_data.append(self.getStringListFilamentColumn(filament_number, header[1]))
 
                 write_data = list(zip(*all_filament_data))
+
                 for i in write_data:
                     [write_star.write('%s\t' % j) for j in i]
                     write_star.write('\n')
