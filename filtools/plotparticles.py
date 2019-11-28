@@ -1,5 +1,5 @@
 import numpy as np
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 from filtools import parse_star, parse_mrc
@@ -12,18 +12,18 @@ def plot_filament_pdf(starfile_path):
     filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
 
     #Code to plot the graphs as a pdf file
-    with PdfPages(starfile[:-5] + '_alignmentplot.pdf') as pdf:
+    with PdfPages(starfile_path[:-5] + '_alignmentplot.pdf') as pdf:
     	for i in range(filament_data.number_of_filaments):
 
     		#If statement only plots one in every 50 "tubes" to prevent making an insanely large pdf file
     		if i % 50 == 1:
 
-    			phi=filament_data.getSpecificFilamentData(i, 'rlnAngleRot')
-    			the=filament_data.getSpecificFilamentData(i, 'rlnAngleTilt')
-    			psi=filament_data.getSpecificFilamentData(i, 'rlnAnglePsi')
-    			xsh=filament_data.getSpecificFilamentData(i, 'rlnOriginXAngst')
-    			ysh=filament_data.getSpecificFilamentData(i, 'rlnOriginYAngst')
-    			tracklength = filament_data.getSpecificFilamentData(i, 'rlnHelicalTrackLengthAngst')
+    			phi=filament_data.getNumpyFilamentColumn(i, 'rlnAngleRot')
+    			the=filament_data.getNumpyFilamentColumn(i, 'rlnAngleTilt')
+    			psi=filament_data.getNumpyFilamentColumn(i, 'rlnAnglePsi')
+    			xsh=filament_data.getNumpyFilamentColumn(i, 'rlnOriginXAngst')
+    			ysh=filament_data.getNumpyFilamentColumn(i, 'rlnOriginYAngst')
+    			tracklength = filament_data.getNumpyFilamentColumn(i, 'rlnHelicalTrackLengthAngst')
 
     			f,(ax1,ax2,ax3,ax4)=plt.subplots(1,4,figsize=(12,6))
     			plt.setp([ax1,ax2,ax3,ax4],xticks=[i for i in range(1,len(phi)+1,2)],xlabel='Particle Number')
@@ -68,5 +68,5 @@ def makeTurningFilamentVideo(starfile_path, video_length):
 
         parsed_mrc = parse_mrc.readMRCfileNumpy(particle)
 
-        if particle_no > 5:
+        if particle_no > 1:
             quit()
