@@ -148,6 +148,8 @@ class readFilamentsFromStarFile(object):
 
         self.filaments = temp_filaments
 
+        self.new_data_headers['noShortFibres'] = 0
+
         if verbose:
             print('There are %i filaments in the saved star file' % self.number_of_filaments)
 
