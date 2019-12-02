@@ -156,3 +156,11 @@ def unify_psi(starfile_path, plot_changes = False):
         filament_data.addFilamentDataColumn(filament_no, unified_psi_angles, 'rlnAnglePsi')
 
     filament_data.writeFilamentsToStarFile()
+
+def remove_shortFilaments(starfile_path, minimum_length):
+
+    filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
+
+    filament_data.removeShortFilaments(minimum_length, verbose = True)
+
+    filament_data.writeFilamentsToStarFile()
