@@ -152,7 +152,7 @@ def unify_psi(starfile_path, plot_changes = False):
         #line_of_best_fit = linRegress(tracklength, np.full(len(tracklength),best_plot[0]),np.full(len(tracklength),0))
         line_of_best_fit = linRegress(tracklength, best_plot[0],0)
         unified_psi_angles = adjustAngletoLOBF(line_of_best_fit, psi_original, 5)
-        
+
         filament_data.addFilamentDataColumn(filament_no, unified_psi_angles, 'rlnAnglePsi')
 
     filament_data.writeFilamentsToStarFile()
