@@ -162,5 +162,11 @@ def remove_shortFilaments(starfile_path, minimum_length):
     filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
 
     filament_data.removeShortFilaments(minimum_length, verbose = True)
-
     filament_data.writeFilamentsToStarFile()
+
+def selectParticlesbyAlignmentAngleRange(starfile_path, rln_header_identifier, lower_limit, upper_limit):
+
+    particle_data = parse_star.readBlockDataFromStarfile(starfile_path)
+
+    particle_data.selectAngularRange(rln_header_identifier, lower_limit, upper_limit)
+    particle_data.writeBlockDatatoStar()

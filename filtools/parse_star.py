@@ -65,10 +65,12 @@ class readFilamentsFromStarFile(object):
 
         tube_id_column_number = self.headers['rlnHelicalTubeID']
 
-        #Construct the "filaments" dictionary with the filament "number" as a key and all the particles from that filament as entries
+        #Construct the "filaments" dictionary with the filament "number" as a key
+        #and all the particles from that filament as entries
         for micrograph_key in sorted(full_data_dict.keys()):
             micrograph_data = full_data_dict[micrograph_key]
             filament_positions = {}
+
             #Make dictionaries which contain the positions for each filament in the original array/starfile
             for num, particle in enumerate(micrograph_data):
                 try:
@@ -82,11 +84,10 @@ class readFilamentsFromStarFile(object):
                 particle_position_list = filament_positions[filament_key]
 
                 #Sort the particles based on helical track tracklength
-                #Note: the zip() function rearranges the list into a more numpy like
-                #structure: i.e. columns can be easily indexed using array[i] for i'th column
                 sorted_particles = sorted([micrograph_data[i] for i in particle_position_list], key = lambda x: float(x[self.headers['rlnHelicalTrackLengthAngst']]))
-                #particles = [micrograph_data[i] for i in particle_position_list]
 
+                #The zip() function rearranges the list into a more numpy like
+                #structure: i.e. columns can be easily indexed using array[i] for i'th column
                 sorted_structured_particles = list(zip(*sorted_particles))
 
                 self.filaments[self.number_of_filaments] = sorted_structured_particles
@@ -128,6 +129,9 @@ class readFilamentsFromStarFile(object):
         self.new_data_headers[name_of_altered_data_column] = new_column_number
         self.filaments[filament_number] = filament_data
 
+    def getNumberofParticlesinFilament(self, particle_no):
+        return len(self.filaments[particle_no][self.headers['rlnOriginX']])
+
     def removeShortFilaments(self, minimum_filament_length, verbose = False):
 
         '''Remove filaments with less than specified number of particles '''
@@ -148,6 +152,7 @@ class readFilamentsFromStarFile(object):
 
         self.filaments = temp_filaments
 
+        #This is only included so the saved starfile has a meaningful filename
         self.new_data_headers['noShortFibres'] = 0
 
         if verbose:
@@ -269,14 +274,21 @@ class readBlockDataFromStarfile(object):
         #Makes a multidimensional array that can be easily indexed for sepecific columns
         self.particle_data_block = list(zip(*temp_data_block))
 
-    def getSpecificDataColumn(self, header_name):
+    def getNumpyDataColumn(self, header_name):
 
         '''Retrieves a specific column of data as a numpy 1D array'''
 
         try:
-            return np.array(self.particle_data_block[self.headers[header_name]], dtype = 'float16')
+            return np.array(self.particle_data_block[self.headers[header_name]], dtype = 'float32')
         except ValueError:
             return np.array(self.particle_data_block[self.headers[header_name]])
+
+    def getStringDataColumn(self, header_name):
+
+        '''Retreves a specific column of data as a list of strings - useful for
+        saving star files '''
+
+        return [str(x) for x in self.particle_data_block[header_name]]
 
     def addColumntoBlockData(self, new_data_column, header_name):
 
@@ -286,6 +298,44 @@ class readBlockDataFromStarfile(object):
         self.new_data_headers[header_name] = new_column_number
 
         self.particle_data_block.append(new_data_column)
+
+    def getOneParticleData(self, particle_no):
+
+        '''Return all the data for one particle - use a list of strings to ensure
+        a predictable result rather than a mixed list
+
+        This is very slow if its consistently called - better to keep track via a
+        self variable'''
+
+        unzipped_particles = list(zip(*self.particle_data_block))
+
+        return [str(x) for x in unzipped_particles[particle_no]]
+
+    def selectAngularRange(self, header_name, lower_limit, upper_limit):
+
+        '''Selects the particles within the stated range for a given alignment angle '''
+
+        print('There are ' + str(self.number_of_particles) + ' particles to process')
+
+        anglelist = self.getNumpyDataColumn(header_name)
+
+        for particle_no in range(self.number_of_particles):
+
+            if lower_limit < anglelist[particle_no] and upper_limit > anglelist[particle_no]:
+
+
+
+                try:
+                    particles_within_angular_range.append(self.getOneParticleData(particle_no))
+                except NameError:
+                    particles_within_angular_range = [self.getOneParticleData(particle_no)]
+
+            if particle_no % 1000 == 0:
+                print('Particle number ' + str(particle_no) + ' has been processed')
+
+        self.particle_data_block = list(zip(*particles_within_angular_range))
+
+        self.new_data_headers['RestrictedAngleRange' + header_name + str(lower_limit) + 'to' +str(lower_limit)] = 0
 
     def writeBlockDatatoStar(self, new_starfile_name, updated_data = True):
 
@@ -323,12 +373,14 @@ class readBlockDataFromStarfile(object):
             #Write out the data
             #Can't just shunt the data directly into text file due to abstract method of writing new data
             for header in ordered_header_list:
-                all_filament_data.append(self.getStringListFilamentColumn(filament_number, header[1]))
+                all_bulk_data.append(self.getStringListFilamentColumn(filament_number, header[1]))
 
             write_data = list(zip(*all_filament_data))
             for i in write_data:
                 [write_star.write('%s\t' % j) for j in i]
                 write_star.write('\n')
+
+            print('New starfile saved as ' + save_file_name + '.star')
 
 
 if __name__ == '__main__':
