@@ -221,13 +221,15 @@ class readBlockDataFromStarfile(object):
     This would also be used for standard single particle projects'''
 
     def __init__(self, filename, headers = {}, optics_info = [],
-    particle_data_block = [], new_data_headers = {}, number_of_particles = 0):
+    particle_data_block = [], particles = [], new_data_headers = {}, number_of_particles = 0, star_comments = []):
         self.filename = filename
         self.headers = headers
         self.optics_info = optics_info
         self.particle_data_block = particle_data_block
+        self.particles = particles
         self.new_data_headers = new_data_headers
         self.number_of_particles = number_of_particles
+        self.star_comments = star_comments
 
         self.loadBlockDataFromStar()
 
@@ -239,14 +241,16 @@ class readBlockDataFromStarfile(object):
         individual filaments '''
 
         with open(self.filename, 'r') as starfile:
-            lines = [i.strip() for i in starfile if len(i.strip()) !=0 and i[0] !='#']
+            lines = [i.strip() for i in starfile if len(i.strip()) !=0]
 
         optics = False
         star_data = []
         full_data_dict = {}
 
         for line in lines:
-            if line == 'data_optics':
+            if line[0] == '#':
+                self.star_comments.append(line)
+            elif line == 'data_optics':
                 optics = True
                 self.optics_info.append(line)
                 pass
@@ -272,6 +276,7 @@ class readBlockDataFromStarfile(object):
                 self.number_of_particles += 1
 
         #Makes a multidimensional array that can be easily indexed for sepecific columns
+        self.particles = temp_data_block
         self.particle_data_block = list(zip(*temp_data_block))
 
     def getNumpyDataColumn(self, header_name):
@@ -288,7 +293,7 @@ class readBlockDataFromStarfile(object):
         '''Retreves a specific column of data as a list of strings - useful for
         saving star files '''
 
-        return [str(x) for x in self.particle_data_block[header_name]]
+        return [str(x) for x in self.particle_data_block[self.headers[header_name]]]
 
     def addColumntoBlockData(self, new_data_column, header_name):
 
@@ -302,14 +307,9 @@ class readBlockDataFromStarfile(object):
     def getOneParticleData(self, particle_no):
 
         '''Return all the data for one particle - use a list of strings to ensure
-        a predictable result rather than a mixed list
+        a predictable result rather than a mixed list'''
 
-        This is very slow if its consistently called - better to keep track via a
-        self variable'''
-
-        unzipped_particles = list(zip(*self.particle_data_block))
-
-        return [str(x) for x in unzipped_particles[particle_no]]
+        return self.particles[particle_no]
 
     def selectAngularRange(self, header_name, lower_limit, upper_limit):
 
@@ -322,22 +322,25 @@ class readBlockDataFromStarfile(object):
         for particle_no in range(self.number_of_particles):
 
             if lower_limit < anglelist[particle_no] and upper_limit > anglelist[particle_no]:
-
-
-
+                try:
+                    particles_within_angular_range.append(self.getOneParticleData(particle_no))
+                except NameError:
+                    particles_within_angular_range = [self.getOneParticleData(particle_no)]
+            elif (lower_limit - 180) < anglelist[particle_no] and (upper_limit-180) > anglelist[particle_no]:
                 try:
                     particles_within_angular_range.append(self.getOneParticleData(particle_no))
                 except NameError:
                     particles_within_angular_range = [self.getOneParticleData(particle_no)]
 
-            if particle_no % 1000 == 0:
-                print('Particle number ' + str(particle_no) + ' has been processed')
+            #if particle_no % 1000 == 0:
+            #    print('Particle number ' + str(particle_no) + ' has been processed')
 
+        self.paticles = particles_within_angular_range
         self.particle_data_block = list(zip(*particles_within_angular_range))
 
-        self.new_data_headers['RestrictedAngleRange' + header_name + str(lower_limit) + 'to' +str(lower_limit)] = 0
+        self.new_data_headers[header_name + 'Range' + str(lower_limit) + 'to' +str(upper_limit)] = 0
 
-    def writeBlockDatatoStar(self, new_starfile_name, updated_data = True):
+    def writeBlockDatatoStar(self, save_updated_data = True):
 
         save_file_name = self.filename[:-5] + '_updated'
 
@@ -373,9 +376,13 @@ class readBlockDataFromStarfile(object):
             #Write out the data
             #Can't just shunt the data directly into text file due to abstract method of writing new data
             for header in ordered_header_list:
-                all_bulk_data.append(self.getStringListFilamentColumn(filament_number, header[1]))
+                try:
+                    all_bulk_data.append(self.getStringDataColumn(header[1]))
+                except NameError:
+                    all_bulk_data = [self.getStringDataColumn(header[1])]
 
-            write_data = list(zip(*all_filament_data))
+            write_data = list(zip(*all_bulk_data))
+
             for i in write_data:
                 [write_star.write('%s\t' % j) for j in i]
                 write_star.write('\n')
