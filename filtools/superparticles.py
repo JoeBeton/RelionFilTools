@@ -1,7 +1,7 @@
 import numpy as np
 import EMAN2 as eman2
 
-from filtools import parse_star, parse_mrc
+from filtools import parse_star
 
 def make_superparticles(starfile_path, window_size):
 
@@ -91,3 +91,34 @@ def make_superparticles(starfile_path, window_size):
     ptcls=[ptcl for mgph in mgphs for ptcl in mgph]
     write_star('%s/superparticles.star' % args.outpath,MetaDataLabels,ptcls)
     '''
+
+def makeTurningFilamentVideo(starfile_path, frame_rate, video_length):
+
+    particles = parse_star.readBlockDataFromStarfile(starfile_path)
+
+    sorted_particles = sorted(list(zip(*particles.particle_data_block)), key = lambda x: float(x[particles.headers['rlnAngleRot']]))
+    particles.particle_data_block = list(zip(*sorted_particles))
+
+    particle_name_list = getSpecificDataColumn('rlnImageName')
+
+    indexing_frequency = int(particles.number_of_particles/(frame_rate*video_length))
+
+    for particle_no in range(0, particles.number_of_particles, indexing_frequency):
+
+        particle_name = particle_name_list[particle_no][7:]
+        stack_position = int(particle_name_list[particle_no][0:6])
+
+        #Open the particle using eman2 functions
+        open_particle = EMData.read_images(particle_name, img_index_start = stack_position, img_index_end = stack_position )
+
+        #Rotate the particles so they overlay each other
+        t = Transform()
+        psi_angle = particles.getOneParticleData(particle_no)[particles.header['rlnAnglePsi']]
+        x_shift = particles.getOneParticleData(particle_no)[particles.header['rlnOriginXAngst']]
+        y_shift = particles.getOneParticleData(particle_no)[particles.header['rlnOriginYAngst']]
+        t.set_params({'type':'2d','alpha':psi_angle,'tx':x_shift,'ty':y_shift})
+        open_particle.transform(t)
+
+        #Save the particle to the growing stack
+        video_filename = starfile_path[:-5] + 'turningvid.mrcs'
+        open_particle.append_image(video_filename)
