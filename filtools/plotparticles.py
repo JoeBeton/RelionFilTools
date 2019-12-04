@@ -54,19 +54,3 @@ def plot_filament_pdf(starfile_path):
 
     			pdf.savefig()
     			plt.close()
-
-def makeTurningFilamentVideo(starfile_path, video_length):
-
-    particles = parse_star.readBlockDataFromStarfile(starfile_path)
-
-    sorted_particles = sorted(list(zip(*particles.particle_data_block)), key = lambda x: float(x[particles.headers['rlnAngleRot']]))
-    particles.particle_data_block = list(zip(*sorted_particles))
-
-    for particle_no in range(particles.number_of_particles):
-
-        particle = particles.getSpecificDataColumn('rlnImageName')[particle_no]
-
-        parsed_mrc = parse_mrc.readMRCfileNumpy(particle)
-
-        if particle_no > 1:
-            quit()
