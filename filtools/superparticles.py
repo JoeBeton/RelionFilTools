@@ -101,7 +101,7 @@ def makeTurningFilamentVideo(starfile_path, frame_rate, video_length):
     particles.particle_data_block = list(zip(*sorted_particles))
 
     particle_name_list = particles.getStringDataColumn('rlnImageName')
-	
+
     indexing_frequency = int(particles.number_of_particles/(frame_rate*video_length))
 
     print('A total of ' + str(int((particles.number_of_particles/indexing_frequency))) + ' particles to add to the video file')
@@ -131,5 +131,5 @@ def makeTurningFilamentVideo(starfile_path, frame_rate, video_length):
 
         if tick % 250 == 0:
             print('Particle number ' + str(tick) + ' has been added to the video file')
-		
+
     print('File saved as ' +  video_filename)
