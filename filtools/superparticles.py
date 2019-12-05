@@ -95,30 +95,41 @@ def make_superparticles(starfile_path, window_size):
 def makeTurningFilamentVideo(starfile_path, frame_rate, video_length):
 
     particles = parse_star.readBlockDataFromStarfile(starfile_path)
-
+    video_filename = starfile_path[:-5] + 'turningvid.mrcs'
     sorted_particles = sorted(list(zip(*particles.particle_data_block)), key = lambda x: float(x[particles.headers['rlnAngleRot']]))
+    particles.particles = sorted_particles
     particles.particle_data_block = list(zip(*sorted_particles))
 
-    particle_name_list = getSpecificDataColumn('rlnImageName')
+    particle_name_list = particles.getStringDataColumn('rlnImageName')
 
     indexing_frequency = int(particles.number_of_particles/(frame_rate*video_length))
+
+    print('A total of ' + str(int((particles.number_of_particles/indexing_frequency))) + ' particles to add to the video file')
+
+    tick = 0
 
     for particle_no in range(0, particles.number_of_particles, indexing_frequency):
 
         particle_name = particle_name_list[particle_no][7:]
-        stack_position = int(particle_name_list[particle_no][0:6])
+        stack_position = int(particle_name_list[particle_no][0:6])-1
 
         #Open the particle using eman2 functions
-        open_particle = EMData.read_images(particle_name, img_index_start = stack_position, img_index_end = stack_position )
+        open_particle = EMData.read_images(particle_name, [stack_position])
 
         #Rotate the particles so they overlay each other
         t = Transform()
-        psi_angle = particles.getOneParticleData(particle_no)[particles.header['rlnAnglePsi']]
-        x_shift = particles.getOneParticleData(particle_no)[particles.header['rlnOriginXAngst']]
-        y_shift = particles.getOneParticleData(particle_no)[particles.header['rlnOriginYAngst']]
-        t.set_params({'type':'2d','alpha':psi_angle,'tx':x_shift,'ty':y_shift})
-        open_particle.transform(t)
+        psi_angle = float(particles.getOneParticleData(particle_no)[particles.headers['rlnAnglePsi']])
+        x_shift = float(particles.getOneParticleData(particle_no)[particles.headers['rlnOriginXAngst']])
+        y_shift = float(particles.getOneParticleData(particle_no)[particles.headers['rlnOriginYAngst']])
+        t.set_params({'type':'2d','alpha':-psi_angle,'tx':-x_shift,'ty':-y_shift})
+        open_particle[0].transform(t)
 
         #Save the particle to the growing stack
-        video_filename = starfile_path[:-5] + 'turningvid.mrcs'
-        open_particle.append_image(video_filename)
+        open_particle[0].append_image(video_filename)
+
+        tick +=1
+
+        if tick % 250 == 0:
+            print('Particle number ' + str(tick) + ' has been added to the video file')
+
+    print('File saved as ' +  video_filename)
