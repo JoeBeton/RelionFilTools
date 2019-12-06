@@ -311,6 +311,14 @@ class readBlockDataFromStarfile(object):
 
         return self.particles[particle_no]
 
+    def updateColumnsWithNewData(self):
+
+        '''Updates the particle_data_block with new data as specified in the
+        new_data_headers dictionary '''
+
+        for key in self.new_data_headers.keys():
+            self.particle_data_block[self.headers[key]] = self.particle_data_block[self.new_data_headers[key]]
+
     def selectAngularRange(self, header_name, lower_limit, upper_limit):
 
         '''Selects the particles within the stated range for a given alignment angle '''
