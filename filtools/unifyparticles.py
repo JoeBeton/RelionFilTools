@@ -49,8 +49,8 @@ def unify_rot(starfile_path, twist, rise = 4.75, apix = 1.05, plot_changes = Fal
     initial_gradient = twist/(rise/apix)
 
     filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
-    print('Filaments with less than 5 particles will be removed')
-    filament_data.removeShortFilaments(5)
+    #print('Filaments with less than 5 particles will be removed')
+    #filament_data.removeShortFilaments(5)
     print('There are %s filaments to process' % filament_data.number_of_filaments)
 
     m_list = np.linspace((initial_gradient - (initial_gradient/2)), (initial_gradient+(initial_gradient/2)), 40)
