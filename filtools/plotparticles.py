@@ -62,16 +62,21 @@ def plotFilamentLengthHistogram(starfile_path):
 
     filament_length_array = []
     longest_filament = 0
+    shortest_fil = 1e6
+
     for key in sorted(filament_data.filaments.keys()):
         fil_length = len(filament_data.getNumpyFilamentColumn(key, 'rlnAnglePsi'))
         filament_length_array.append(fil_length)
 
         if fil_length > longest_filament:
             longest_filament = fil_length
+        if fil_length < shortest_fil:
+            shortest_fil = fil_length
+
+    bins = longest_filament - shortest_fil + 1
 
     with PdfPages(starfile_path[:-5] + '_filLengthHist.pdf') as pdf:
-
-        plt.hist(filament_length_array, longest_filament, histtype= 'bar')
+        plt.hist(filament_length_array, bins, histtype= 'bar')
         plt.xlabel('Number of particles per filament')
         plt.ylabel('Occurence')
         pdf.savefig()
