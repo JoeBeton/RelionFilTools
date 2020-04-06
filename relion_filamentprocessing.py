@@ -21,6 +21,8 @@ parser.add_argument('--make_superparticles', type = int, metavar = '*Specify win
 
 parser.add_argument('--plot_changes', action = 'store_true', help = 'Option to save pdf plots showing the old and updated angles for each filament')
 parser.add_argument('--plot_pdf', '--p', action = 'store_true', help = 'Plot the particle data from filaments into a pdf file')
+parser.add_argument('--plot_fillenhist', action = 'store_true', help = 'Plot a histogram of the filament lengths')
+
 parser.add_argument('--fibretwist_movie', nargs = 2, metavar = '[frame rate] [length of video (seconds)]', help = 'Make a movie showing a twisting fibre')
 
 args=parser.parse_args()
@@ -55,6 +57,9 @@ if args.make_superparticles:
 
 if args.plot_pdf:
     plotparticles.plot_filament_pdf(args.input)
+if args.plot_fillenhist:
+    plotparticles.plotFilamentLengthHistogram(args.input)
+
 
 if args.fibretwist_movie:
     from filtools import superparticles

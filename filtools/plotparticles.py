@@ -55,3 +55,24 @@ def plot_filament_pdf(starfile_path):
 
             pdf.savefig()
             plt.close()
+
+def plotFilamentLengthHistogram(starfile_path):
+
+    filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
+
+    filament_length_array = []
+    longest_filament = 0
+    for key in sorted(filament_data.filaments.keys()):
+        fil_length = len(filament_data.getNumpyFilamentColumn(key, 'rlnAnglePsi'))
+        filament_length_array.append(fil_length)
+
+        if fil_length > longest_filament:
+            longest_filament = fil_length
+
+    with PdfPages(starfile_path[:-5] + '_filLengthHist.pdf') as pdf:
+
+        plt.hist(filament_length_array, longest_filament, histtype= 'bar')
+        plt.xlabel('Number of particles per filament')
+        plt.ylabel('Occurence')
+        pdf.savefig()
+        plt.close()
