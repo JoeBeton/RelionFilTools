@@ -122,12 +122,14 @@ class readFilamentsFromStarFile(object):
         updates the updated data headers '''
 
         new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys())) - 1
+
         filament_data = self.filaments[filament_number]
 
         filament_data.append(new_data_column)
 
         self.new_data_headers[name_of_altered_data_column] = new_column_number
         self.filaments[filament_number] = filament_data
+
 
     def getNumberofParticlesinFilament(self, particle_no):
         return len(self.filaments[particle_no][self.headers['rlnOriginX']])
@@ -140,6 +142,9 @@ class readFilamentsFromStarFile(object):
             print('There are %i filaments in the input star file' % self.number_of_filaments)
 
         for fil_no in range(self.number_of_filaments):
+            #This is just to ensure that the starfile name is correctly updated and data structure is maintained
+            self.addFilamentDataColumn(fil_no, self.getNumpyFilamentColumn(fil_no,'rlnAngleRot'), 'noShortFilaments')
+
             if len(self.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')) < minimum_filament_length:
                 del self.filaments[fil_no]
 
@@ -151,9 +156,6 @@ class readFilamentsFromStarFile(object):
             self.number_of_filaments += 1
 
         self.filaments = temp_filaments
-
-        #This is only included so the saved starfile has a meaningful filename
-        self.new_data_headers['noShortFibres'] = 0
 
         if verbose:
             print('There are %i filaments in the saved star file' % self.number_of_filaments)
@@ -292,7 +294,7 @@ class readBlockDataFromStarfile(object):
 
         '''Retreves a specific column of data as a list of strings - useful for
         saving star files '''
-
+		
         return [str(x) for x in self.particle_data_block[self.headers[header_name]]]
 
     def addColumntoBlockData(self, new_data_column, header_name):
