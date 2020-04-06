@@ -76,3 +76,5 @@ def plotFilamentLengthHistogram(starfile_path):
         plt.ylabel('Occurence')
         pdf.savefig()
         plt.close()
+
+    print('Saved a histogram plot showing the filament lengths as: %s_filLengthHist.pdf' % starfile_path[:-5])
