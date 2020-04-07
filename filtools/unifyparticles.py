@@ -157,12 +157,59 @@ def unify_psi(starfile_path, plot_changes = False):
 
     filament_data.writeFilamentsToStarFile()
 
-def remove_shortFilaments(starfile_path, minimum_length):
+def removeShortFilsFromStarfile(starfile_path, minimum_length):
+
+    print('Removing short filaments from %s' % starfile_path)
 
     filament_data = parse_star.readFilamentsFromStarFile(starfile_path)
 
-    filament_data.removeShortFilaments(minimum_length, verbose = True)
+    '''Remove filaments with less than specified number of particles '''
+    print('There are %i filaments in the input star file' % filament_data.number_of_filaments)
+
+    for fil_no in range(filament_data.number_of_filaments):
+        #This is just to ensure that the starfile name is correctly updated and data structure is maintained
+        filament_data.addFilamentDataColumn(fil_no, filament_data.getNumpyFilamentColumn(fil_no,'rlnAngleRot'), 'noShortFilaments')
+
+        if len(filament_data.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')) < minimum_length:
+            del filament_data.filaments[fil_no]
+
+    #remake the filaments dictionary with sequential keys
+    temp_filaments = {}
+    filament_data.number_of_filaments = 0
+    for num, key in enumerate(sorted(filament_data.filaments.keys())):
+        temp_filaments[num] = filament_data.filaments[key]
+        filament_data.number_of_filaments += 1
+
+    filament_data.filaments = temp_filaments
+
+    print('There are %i filaments in the saved star file' % filament_data.number_of_filaments)
+
     filament_data.writeFilamentsToStarFile()
+
+def removeShortFilsFromObject(filament_object, minimum_length):
+
+    '''Remove filaments with less than specified number of particles '''
+    print('There are %i filaments in the input star file' % filament_object.number_of_filaments)
+
+    for fil_no in range(filament_object.number_of_filaments):
+        #This is just to ensure that the starfile name is correctly updated and data structure is maintained
+        filament_object.addFilamentDataColumn(fil_no, filament_object.getNumpyFilamentColumn(fil_no,'rlnAngleRot'), 'noShortFilaments')
+
+        if len(filament_object.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')) < minimum_length:
+            del filament_object.filaments[fil_no]
+
+    #remake the filaments dictionary with sequential keys
+    temp_filaments = {}
+    filament_object.number_of_filaments = 0
+    for num, key in enumerate(sorted(filament_object.filaments.keys())):
+        temp_filaments[num] = filament_object.filaments[key]
+        filament_object.number_of_filaments += 1
+
+    filament_object.filaments = temp_filaments
+
+    if verbose:
+        print('There are %i filaments in the saved star file' % filament_object.number_of_filaments)
+
 
 def selectParticlesbyAlignmentAngleRange(starfile_path, rln_header_identifier, lower_limit, upper_limit):
 

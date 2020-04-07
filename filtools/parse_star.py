@@ -140,32 +140,6 @@ class readFilamentsFromStarFile(object):
 
         return (micrograph_name, rln_tube_number)
 
-    def removeShortFilaments(self, minimum_filament_length, verbose = False):
-
-        '''Remove filaments with less than specified number of particles '''
-
-        if verbose:
-            print('There are %i filaments in the input star file' % self.number_of_filaments)
-
-        for fil_no in range(self.number_of_filaments):
-            #This is just to ensure that the starfile name is correctly updated and data structure is maintained
-            self.addFilamentDataColumn(fil_no, self.getNumpyFilamentColumn(fil_no,'rlnAngleRot'), 'noShortFilaments')
-
-            if len(self.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')) < minimum_filament_length:
-                del self.filaments[fil_no]
-
-        #remake the filaments dictionary with sequential keys
-        temp_filaments = {}
-        self.number_of_filaments = 0
-        for num, key in enumerate(sorted(self.filaments.keys())):
-            temp_filaments[num] = self.filaments[key]
-            self.number_of_filaments += 1
-
-        self.filaments = temp_filaments
-
-        if verbose:
-            print('There are %i filaments in the saved star file' % self.number_of_filaments)
-
     def writeFilamentsToStarFile(self, save_updated_data = True):
 
         '''Writes the data from all the filaments to a starfile, updating columns
