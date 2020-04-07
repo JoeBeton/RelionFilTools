@@ -35,7 +35,7 @@ if args.reset_tilt:
 
 if args.remove_shortfils:
     for starfile in args.input:
-        unifyparticles.remove_shortFilaments(starfile, args.remove_shortfils)
+        unifyparticles.removeShortFilsFromStarfile(starfile, args.remove_shortfils)
 
 if args.select_angles:
     for starfile in args.input:
