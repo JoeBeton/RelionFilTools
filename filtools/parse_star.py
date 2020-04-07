@@ -11,16 +11,15 @@ class readFilamentsFromStarFile(object):
     Also includes functions to access specific data and edit and save the loaded
     particle data'''
 
-    def __init__(self, filename, number_of_filaments = 0, headers = {}, optics_info = [],
-    filaments = {}, new_data_headers = {}, star_comments = [], number_updated_columns = 0):
+    def __init__(self, filename):
         self.filename = filename
-        self.number_of_filaments = number_of_filaments
-        self.optics_info = optics_info
-        self.headers = headers
-        self.filaments = filaments
-        self.new_data_headers = new_data_headers
-        self.star_comments = star_comments
-        self.number_updated_columns = number_updated_columns
+        self.number_of_filaments = 0
+        self.optics_info = []
+        self.headers = {}
+        self.filaments = {}
+        self.new_data_headers = {}
+        self.star_comments = []
+        self.number_updated_columns = 0
 
         self.loadFilamentsFromStar()
 
@@ -132,7 +131,14 @@ class readFilamentsFromStarFile(object):
 
 
     def getNumberofParticlesinFilament(self, particle_no):
-        return len(self.filaments[particle_no][self.headers['rlnOriginX']])
+        return len(self.filaments[particle_no][self.headers['rlnMicrographName']])
+
+    def getRlnFilamentNumberandMicrograph(self, filament_no):
+
+        micrograph_name = self.getStringListFilamentColumn(filament_no, 'rlnMicrographName')[0]
+        rln_tube_number = int(self.getStringListFilamentColumn(filament_no, 'rlnHelicalTubeID')[0])
+
+        return (micrograph_name, rln_tube_number)
 
     def removeShortFilaments(self, minimum_filament_length, verbose = False):
 
@@ -294,7 +300,7 @@ class readBlockDataFromStarfile(object):
 
         '''Retreves a specific column of data as a list of strings - useful for
         saving star files '''
-		
+
         return [str(x) for x in self.particle_data_block[self.headers[header_name]]]
 
     def addColumntoBlockData(self, new_data_column, header_name):
