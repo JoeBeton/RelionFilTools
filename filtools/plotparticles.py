@@ -1,6 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import seaborn as sns
+
 
 from filtools import parse_star, parse_mrc
 
@@ -83,3 +85,63 @@ def plotFilamentLengthHistogram(starfile_path):
         plt.close()
 
     print('Saved a histogram plot showing the filament lengths as: %s_filLengthHist.pdf' % starfile_path[:-5])
+
+def compareFilamentNumbers(starfile1_path, starfile2_path):
+
+    #Initialising seaborn settings
+    sns.set()
+    sns.set_style("white", {'font.family': ['sans-serif']})
+    sns.set_context("poster", font_scale=0.5)
+    sns.color_palette(palette=None)
+
+    filament_data1 = parse_star.readFilamentsFromStarFile(starfile1_path)
+    filament_data2 = parse_star.readFilamentsFromStarFile(starfile2_path)
+
+    dataset1_uniquefils = set()
+    dataset1_fil_lengths = dict()
+    dataset2_uniquefils = set()
+    dataset2_fil_lengths = dict()
+
+    for key in sorted(filament_data1.filaments.keys()):
+        uniquefil_identifier = filament_data1.getRlnFilamentNumberandMicrograph(key)
+        dataset1_uniquefils.add(uniquefil_identifier)
+        dataset1_fil_lengths[uniquefil_identifier] = filament_data1.getNumberofParticlesinFilament(key)
+        #print(len(dataset1_uniquefils), len(dataset2_uniquefils))
+
+    for key in sorted(filament_data2.filaments.keys()):
+        uniquefil_identifier = filament_data2.getRlnFilamentNumberandMicrograph(key)
+        dataset2_uniquefils.add(uniquefil_identifier)
+        dataset2_fil_lengths[uniquefil_identifier] = filament_data2.getNumberofParticlesinFilament(key)
+
+    ratio_array = []
+
+    for unique_fils_ds1 in dataset1_uniquefils:
+        if unique_fils_ds1 in dataset2_uniquefils:
+            ds1_nofil = dataset1_fil_lengths[unique_fils_ds1]
+            ds2_nofil = dataset2_fil_lengths[unique_fils_ds1]
+
+            ratio = ds1_nofil / (ds1_nofil + ds2_nofil)
+
+            ratio_array.append(ratio)
+        else:
+            ratio_array.append(1)
+
+    for unique_fils_ds2 in dataset2_uniquefils:
+        if unique_fils_ds2 in dataset1_uniquefils:
+            ds1_nofil = dataset1_fil_lengths[unique_fils_ds2]
+            ds2_nofil = dataset2_fil_lengths[unique_fils_ds2]
+
+            ratio = ds1_nofil / (ds1_nofil + ds2_nofil)
+
+            ratio_array.append(ratio)
+        else:
+            ratio_array.append(0)
+
+    with PdfPages(starfile1_path[:-5] + '_starFileComparison.pdf') as pdf:
+        plt.hist(ratio_array, 40, histtype= 'bar')
+        plt.xlabel('Ratio between starfile 1 and starfile 2')
+        plt.ylabel('Occurence')
+        pdf.savefig()
+        plt.close()
+
+    print('Saved a histogram plot showing the filament lengths as: %s_starFileComparison.pdf' % starfile1_path[:-5])
