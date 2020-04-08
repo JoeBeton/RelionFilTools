@@ -238,6 +238,9 @@ class readBlockDataFromStarfile(object):
             elif line == 'data_particles':
                 optics = False
                 pass
+            elif line == 'data_':
+                optics = False
+                pass
             elif optics == True:
                 self.optics_info.append(line)
                 pass
@@ -293,6 +296,7 @@ class readBlockDataFromStarfile(object):
 
         self.particle_data_block.append(new_data_column)
 
+
     def getOneParticleData(self, particle_no):
 
         '''Return all the data for one particle - use a list of strings to ensure
@@ -300,8 +304,11 @@ class readBlockDataFromStarfile(object):
 
         return list(self.particles[particle_no])
 
-    def getParticleSpecificData(self, particle_no, header_name):
+    def getParticleSpecificDataString(self, particle_no, header_name):
         return self.particle_data_block[self.headers[header_name]][particle_no]
+
+    def getParticleSpecificDataFloat(self, particle_no, header_name):
+        return float(self.particle_data_block[self.headers[header_name]][particle_no])
 
     def getParticleSpecificNewData(self, particle_no, header_name):
         self.particle_data_block[self.new_data_headers[header_name]][particle_no] = new_data
@@ -311,7 +318,7 @@ class readBlockDataFromStarfile(object):
         ''' Function to add an empty new data column to the particle stack
         which can be edited particle by particle '''
 
-        new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys())) - 1
+        new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys()))
 
         ### Check new header name doesn't already exist
         try:
@@ -375,9 +382,13 @@ class readBlockDataFromStarfile(object):
 
         self.new_data_headers[header_name + 'Range' + str(lower_limit) + 'to' +str(upper_limit)] = 0
 
-    def writeBlockDatatoStar(self, save_updated_data = True):
+    def writeBlockDatatoStar(self, save_updated_data = True, save_new_data = False):
 
         save_file_name = self.filename[:-5] + '_updated'
+
+        if save_new_data:
+            for key in self.new_data_headers.keys():
+                self.headers[key] = self.new_data_headers[key]
 
         #Make an ordered list of the original headers
         for key in self.headers.keys():

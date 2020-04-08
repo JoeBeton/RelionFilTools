@@ -14,16 +14,16 @@ def getAngles(stack_create_starfile, helix_inimodel2d_starfile, crossover_distan
     stack_create_data.addEmptyDataColumn('rlnOriginXAngst')
     stack_create_data.addEmptyDataColumn('rlnOriginYAngst')
 
-    superparticle_width = getParticleSpecificData(hel2dmod_particle_no, 'rlnImageSize')
+    superparticle_width = helix_ini2d_output.getParticleSpecificDataFloat(1, 'rlnImageSize')
 
     #iterate through the images in helix_ini2d starfile and calculate alignement angles
     for hel2dmod_particle_no in range(helix_ini2d_output.number_of_particles):
 
-        image_name = getParticleSpecificData(hel2dmod_particle_no, 'rlnImageName')
-        psi = getParticleSpecificData(hel2dmod_particle_no, 'rlnAnglePsi')
-        y_origin = getParticleSpecificData(hel2dmod_particle_no, 'rlnAnglePsi')
+        image_name = helix_ini2d_output.getParticleSpecificDataString(hel2dmod_particle_no, 'rlnImageName')
+        psi = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnAnglePsi')
+        y_origin = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnAnglePsi')
         #Have to use these ridiculous placeholder names for now as I cba to properly edit RELION code
-        position_in_superparticle = getParticleSpecificData(hel2dmod_particle_no, 'rlnCurrentIteration')
+        position_in_superparticle = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnCurrentIteration')
 
         relative_rot_angle = position_in_superparticle/superparticle_width * 180
 
@@ -35,4 +35,4 @@ def getAngles(stack_create_starfile, helix_inimodel2d_starfile, crossover_distan
         stack_create_data.updateParticleDataNewHeader(particle_no_in_orig_star, 'rlnOriginXAngst', 0)
         stack_create_data.updateParticleDataNewHeader(particle_no_in_orig_star, 'rlnOriginYAngst', y_origin)
 
-    stack_create_data.writeBlockDatatoStar()
+    stack_create_data.writeBlockDatatoStar(save_new_data = True)
