@@ -257,7 +257,7 @@ class readBlockDataFromStarfile(object):
                 self.number_of_particles += 1
 
         #Makes a multidimensional array that can be easily indexed for sepecific columns
-        self.particles = temp_data_block
+        self.particles = tuple(temp_data_block)
         self.particle_data_block = list(zip(*temp_data_block))
 
     def getNumpyDataColumn(self, header_name):
@@ -278,7 +278,15 @@ class readBlockDataFromStarfile(object):
 
     def addColumntoBlockData(self, new_data_column, header_name):
 
-        '''Adds a new column to the data and updates the header info'''
+        '''Adds a new column to the data and updates the header info
+
+        Raises an error if the new data column is not the correct type or shape'''
+
+        if type(new_data_column) is not list or not np.ndarray:
+            raise TypeError('Only lists or numpy arrays can be used as data columns')
+
+        if len(new_data_column) != len(self.particle_data_block[0]):
+            raise ValueError('The new data column is an incorrect length')
 
         new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys())) - 1
         self.new_data_headers[header_name] = new_column_number
@@ -292,11 +300,9 @@ class readBlockDataFromStarfile(object):
 
         return self.particles[particle_no]
 
-    def addDataColumntoOneParticle(self, particles_no):
+    def getParticlePositionsBasedOnMetaData(self, header_name, metadata_value):
         pass
 
-    def getParticlePositionsBasedOnMetaData(self, header_name, metadata_value):
-        pass 
 
     def updateColumnsWithNewData(self):
 
