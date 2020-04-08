@@ -2,7 +2,7 @@ import numpy as np
 
 from filtools import parse_star
 
-def getAngles(stack_create_starfile, helix_inimodel2d_starfile, crossover_distance, pixel_size):
+def getAngles(stack_create_starfile, helix_inimodel2d_starfile, pixel_size):
 
     stack_create_data = parse_star.readBlockDataFromStarfile(stack_create_starfile)
     helix_ini2d_output = parse_star.readBlockDataFromStarfile(helix_inimodel2d_starfile)
