@@ -2,7 +2,7 @@ import numpy as np
 import os
 import argparse
 
-from filtools import unifyparticles, plotparticles
+from filtools import unifyparticles, plotparticles, get_helixinimodel2d_angles
 
 parser = argparse.ArgumentParser()
 
@@ -23,6 +23,8 @@ parser.add_argument('--plot_changes', action = 'store_true', help = 'Option to s
 parser.add_argument('--plot_pdf', '--p', action = 'store_true', help = 'Plot the particle data from filaments into a pdf file')
 parser.add_argument('--plot_fillenhist', action = 'store_true', help = 'Plot a histogram of the filament lengths')
 parser.add_argument('--compare_starfiles', action = 'store_true', help = 'Plot a histogram of the filament lengths')
+
+parser.add_argument('--get_helixinimodel2d_angles', nargs = 1, help = '[angpix] Specialised function for me')
 
 args=parser.parse_args()
 
@@ -71,3 +73,9 @@ if args.compare_starfiles:
         quit('Please provide two starfiles for this function')
     else:
         plotparticles.compareFilamentNumbers(args.input[0], args.input[1])
+
+if args.get_helixinimodel2d_angles:
+    if len(args.input) != 2:
+        quit('Please provide two starfiles for this function')
+    else:
+        get_helixinimodel2d_angles.getAngles(args.input[0], args.input[1], args.get_helixinimodel2d_angles[0])
