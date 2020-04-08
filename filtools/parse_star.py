@@ -414,7 +414,7 @@ class readBlockDataFromStarfile(object):
                     write_star.write(str(i + '\n'))
                 write_star.write(str('\n'))
 
-            write_star.write(str('\n ' + self.star_comments[0] + ' \n\n_data_particles\n\n_loop\n'))
+            write_star.write(str('\n ' + self.star_comments[0] + ' \n\n_data_particles\n\nloop_\n'))
 
             #Write out the header info using the ordered_header_list
             for number, header in enumerate(ordered_header_list):
