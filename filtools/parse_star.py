@@ -285,8 +285,8 @@ class readBlockDataFromStarfile(object):
         if type(new_data_column) is not list or not np.ndarray:
             raise TypeError('Only lists or numpy arrays can be used as data columns')
 
-        if len(new_data_column) != len(self.particle_data_block[0]):
-            raise ValueError('The new data column is an incorrect length')
+        if len(new_data_column) != self.number_of_particles or len(new_data_column[0]) != 1:
+            raise ValueError('The new data column is an incorrect length or shape')
 
         new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys())) - 1
         self.new_data_headers[header_name] = new_column_number
@@ -298,10 +298,44 @@ class readBlockDataFromStarfile(object):
         '''Return all the data for one particle - use a list of strings to ensure
         a predictable result rather than a mixed list'''
 
-        return self.particles[particle_no]
+        return list(self.particles[particle_no])
+
+    def getParticleSpecificData(self, particle_no, header_name):
+        return self.particle_data_block[self.headers[header_name]][particle_no]
+
+    def getParticleSpecificNewData(self, particle_no, header_name):
+        self.particle_data_block[self.new_data_headers[header_name]][particle_no] = new_data
+
+    def addEmptyDataColumn(self, new_header_name):
+
+        ''' Function to add an empty new data column to the particle stack
+        which can be edited particle by particle '''
+
+        new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys())) - 1
+
+        ### Check new header name doesn't already exist
+        try:
+            temp = self.new_data_headers[new_header_name]
+            raise ValueError('Nnew header already exists')
+        except KeyError:
+            self.new_data_headers[new_header_name] = new_column_number
+
+        list_of_zeros = [0] * self.number_of_particles
+
+        self.particle_data_block.append(list_of_zeros)
+
+    def updateParticleDataNewHeader(self, particle_no, header_name, new_data):
+        self.particle_data_block[self.new_data_headers[header_name]][particle_no] = new_data
+
+    def updateParticleData(self, particle_no, header_name, new_data):
+        self.particle_data_block[self.headers[header_name]][particle_no] = new_data
 
     def getParticlePositionsBasedOnMetaData(self, header_name, metadata_value):
-        pass
+
+        ''' Returns a list of the indexes for particles which match the metatdata
+        value '''
+
+        return [i for i, n in enumerate(self.particle_data_block[self.headers[header_name]]) if n == metadata_value]
 
 
     def updateColumnsWithNewData(self):
@@ -359,6 +393,7 @@ class readBlockDataFromStarfile(object):
             for key in self.new_data_headers.keys():
                 self.headers[key] = self.new_data_headers[key]
                 save_file_name = save_file_name + key
+
 
         with open(save_file_name + '.star', 'w') as write_star:
 
