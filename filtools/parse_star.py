@@ -202,16 +202,15 @@ class readBlockDataFromStarfile(object):
 
     This would also be used for standard single particle projects'''
 
-    def __init__(self, filename, headers = {}, optics_info = [],
-    particle_data_block = [], particles = [], new_data_headers = {}, number_of_particles = 0, star_comments = []):
+    def __init__(self, filename):
         self.filename = filename
-        self.headers = headers
-        self.optics_info = optics_info
-        self.particle_data_block = particle_data_block
-        self.particles = particles
-        self.new_data_headers = new_data_headers
-        self.number_of_particles = number_of_particles
-        self.star_comments = star_comments
+        self.headers = {}
+        self.optics_info = []
+        self.particle_data_block = []
+        self.particles = []
+        self.new_data_headers = {}
+        self.number_of_particles = 0
+        self.star_comments = []
 
         self.loadBlockDataFromStar()
 
@@ -292,6 +291,12 @@ class readBlockDataFromStarfile(object):
         a predictable result rather than a mixed list'''
 
         return self.particles[particle_no]
+
+    def addDataColumntoOneParticle(self, particles_no):
+        pass
+
+    def getParticlePositionsBasedOnMetaData(self, header_name, metadata_value):
+        pass 
 
     def updateColumnsWithNewData(self):
 
