@@ -29,10 +29,10 @@ def getAngles(stack_create_starfile, helix_inimodel2d_starfile, pixel_size):
         #Have to use these ridiculous placeholder names for now as I cba to properly edit RELION code
         position_in_superparticle = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnCurrentIteration')
 
-        if position_in_superparticle > (superparticle_width/2):
-            position_in_superparticle = position_in_superparticle - (superparticle_width/2)
+        #if position_in_superparticle > (superparticle_width/2):
+        #    position_in_superparticle = position_in_superparticle - (superparticle_width/2)
 
-        relative_rot_angle = (position_in_superparticle/superparticle_width) * 180
+        relative_rot_angle = (position_in_superparticle/superparticle_width) * 360
 
         particle_no_in_orig_star = stack_create_data.getParticlePositionsBasedOnMetaData('rlnImageName', image_name)[0]
 
