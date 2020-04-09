@@ -13,6 +13,8 @@ def getAngles(stack_create_starfile, helix_inimodel2d_starfile, pixel_size):
     stack_create_data.addEmptyDataColumn('rlnAngleTilt')
     stack_create_data.addEmptyDataColumn('rlnOriginXAngst')
     stack_create_data.addEmptyDataColumn('rlnOriginYAngst')
+    stack_create_data.addEmptyDataColumn('rlnClassPriorOffsetX')
+    stack_create_data.addEmptyDataColumn('rlnClassPriorOffsetY')
 
     superparticle_width = helix_ini2d_output.getParticleSpecificDataFloat(1, 'rlnImageSize')
 
@@ -22,6 +24,8 @@ def getAngles(stack_create_starfile, helix_inimodel2d_starfile, pixel_size):
         image_name = helix_ini2d_output.getParticleSpecificDataString(hel2dmod_particle_no, 'rlnImageName')
         psi = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnAnglePsi')
         y_origin = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnAnglePsi')
+        x_offset_prior = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnClassPriorOffsetX')
+        y_offset_prior = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnClassPriorOffsetY')
         #Have to use these ridiculous placeholder names for now as I cba to properly edit RELION code
         position_in_superparticle = helix_ini2d_output.getParticleSpecificDataFloat(hel2dmod_particle_no, 'rlnCurrentIteration')
 
@@ -34,5 +38,7 @@ def getAngles(stack_create_starfile, helix_inimodel2d_starfile, pixel_size):
         stack_create_data.updateParticleDataNewHeader(particle_no_in_orig_star, 'rlnAngleTilt', 90)
         stack_create_data.updateParticleDataNewHeader(particle_no_in_orig_star, 'rlnOriginXAngst', 0)
         stack_create_data.updateParticleDataNewHeader(particle_no_in_orig_star, 'rlnOriginYAngst', y_origin)
+        stack_create_data.updateParticleDataNewHeader(particle_no_in_orig_star, 'rlnClassPriorOffsetX', x_offset_prior)
+        stack_create_data.updateParticleDataNewHeader(particle_no_in_orig_star, 'rlnClassPriorOffsetY', y_offset_prior)
 
     stack_create_data.writeBlockDatatoStar(save_new_data = True)
