@@ -32,7 +32,10 @@ def getAngles(stack_create_starfile, helix_inimodel2d_starfile, pixel_size):
         #if position_in_superparticle > (superparticle_width/2):
         #    position_in_superparticle = position_in_superparticle - (superparticle_width/2)
 
-        relative_rot_angle = (position_in_superparticle/superparticle_width) * 360
+        if relative_rot_angle > 180:
+            relative_rot_angle = relative_rot_angle - 180
+
+        relative_rot_angle = (position_in_superparticle/(superparticle_width/2)) * 180
 
         particle_no_in_orig_star = stack_create_data.getParticlePositionsBasedOnMetaData('rlnImageName', image_name)[0]
 
