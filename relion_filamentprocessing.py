@@ -13,6 +13,7 @@ parser.add_argument('--unify_rot', '--rot', type = float, help = 'Unify the rot 
 parser.add_argument('--unify_psi', '--psi', action = 'store_true', help = 'Unify the psi values for filaments')
 
 parser.add_argument('--select_angles', '--sel', nargs = 3, metavar = '[Starfile Header] [Lower limit] [Upper limit]', help = 'Function to select particles with alignment angles that fall within the specified range')
+parser.add_argument('--order_filaments', '--order', action = 'store_true', help = 'Save stafile with filaments ordered')
 
 parser.add_argument('--reset_tilt', action = 'store_true', help = 'Option to fit the tilt values for each filament')
 parser.add_argument('--remove_shortfils', type = int, help = 'Option to remove the particles from filaments shorter than the stated value')
@@ -54,6 +55,10 @@ if args.unify_rot:
 if args.unify_psi:
     for starfile in args.input:
         unifyparticles.unify_psi(starfile, do_plots)
+
+if args.order_filaments:
+    for starfile in args.input:
+        unifyparticles.orderFilaments(starfile)
 
 
 if args.make_superparticles:

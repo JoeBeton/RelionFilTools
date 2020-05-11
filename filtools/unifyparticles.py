@@ -217,3 +217,8 @@ def selectParticlesbyAlignmentAngleRange(starfile_path, rln_header_identifier, l
 
     particle_data.selectAngularRange(rln_header_identifier, lower_limit, upper_limit)
     particle_data.writeBlockDatatoStar()
+
+def orderFilaments(starfile):
+
+    fil_data = parse_star.readFilamentsFromStarFile(starfile)
+    fil_data.writeFilamentsToStarFile()
