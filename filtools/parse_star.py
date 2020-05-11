@@ -20,6 +20,7 @@ class readFilamentsFromStarFile(object):
         self.new_data_headers = {}
         self.star_comments = []
         self.number_updated_columns = 0
+        self.number_of_particles = 0
 
         self.loadFilamentsFromStar()
 
@@ -74,8 +75,10 @@ class readFilamentsFromStarFile(object):
             for num, particle in enumerate(micrograph_data):
                 try:
                     filament_positions[particle[tube_id_column_number]].append(num)
+                    self.number_of_particles += 1
                 except KeyError:
                     filament_positions[particle[tube_id_column_number]] = [num]
+                    self.number_of_particles += 1
 
             #Use the dictionaries with the array positions to find the particles
             #and enter them into the "filaments" dictionary
@@ -129,9 +132,15 @@ class readFilamentsFromStarFile(object):
         self.new_data_headers[name_of_altered_data_column] = new_column_number
         self.filaments[filament_number] = filament_data
 
+    def removeParticleData(self, fil_no, particle_no):
 
-    def getNumberofParticlesinFilament(self, particle_no):
-        return len(self.filaments[particle_no][self.headers['rlnMicrographName']])
+        particles_from_filament = list(zip(*self.getAllFilamentData(fil_no)))
+        particles_from_filament.pop(particle_no)
+        self.number_of_particles -= 1
+        self.filaments[fil_no] = list(zip(*particles_from_filament))
+
+    def getNumberofParticlesinFilament(self, filament_no):
+        return len(self.filaments[filament_no][self.headers['rlnMicrographName']])
 
     def getRlnFilamentNumberandMicrograph(self, filament_no):
 
