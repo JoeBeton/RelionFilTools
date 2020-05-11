@@ -14,6 +14,8 @@ parser.add_argument('--unify_psi', '--psi', action = 'store_true', help = 'Unify
 
 parser.add_argument('--select_angles', '--sel', nargs = 3, metavar = '[Starfile Header] [Lower limit] [Upper limit]', help = 'Function to select particles with alignment angles that fall within the specified range')
 parser.add_argument('--order_filaments', '--order', action = 'store_true', help = 'Save stafile with filaments ordered')
+parser.add_argument('--remove_duplicates', action = 'store_true', help = 'Remove duplicate particles from starfiles')
+
 
 parser.add_argument('--reset_tilt', action = 'store_true', help = 'Option to fit the tilt values for each filament')
 parser.add_argument('--remove_shortfils', type = int, help = 'Option to remove the particles from filaments shorter than the stated value')
@@ -60,6 +62,9 @@ if args.order_filaments:
     for starfile in args.input:
         unifyparticles.orderFilaments(starfile)
 
+if args.remove_duplicates:
+    for starfile in args.input:
+        unifyparticles.removeDuplicates(starfile)
 
 if args.make_superparticles:
     from filtools import superparticles

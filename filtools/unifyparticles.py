@@ -222,3 +222,27 @@ def orderFilaments(starfile):
 
     fil_data = parse_star.readFilamentsFromStarFile(starfile)
     fil_data.writeFilamentsToStarFile()
+
+def removeDuplicates(starfile):
+
+    fil_data = parse_star.readFilamentsFromStarFile(starfile)
+    starting_particles = fil_data.number_of_particles
+
+    for fil_no in sorted(fil_data.filaments.keys()):
+
+        hel_track_lengths = fil_data.getStringListFilamentColumn(fil_no, 'rlnHelicalTrackLengthAngst')
+        number_of_duplicates = len(hel_track_lengths) - len(set(hel_track_lengths))
+
+        if number_of_duplicates > 0:
+            for duplicate in range(number_of_duplicates):
+                for i, track_length in enumerate(hel_track_lengths):
+                    try:
+                        duplicate_position = hel_track_lengths.index(track_length, i+1)
+                        hel_track_lengths.pop(i)
+                        fil_data.removeParticleData(fil_no, i)
+                        break
+                    except ValueError:
+                        continue
+
+    print('%i duplicate particles were removed from the starfile' % (starting_particles - fil_data.number_of_particles))
+    fil_data.writeFilamentsToStarFile()
