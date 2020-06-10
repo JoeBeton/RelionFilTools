@@ -146,20 +146,19 @@ class makeDecorationCylinder(object):
 
 class makeUnevenMask(object):
 
-    def __init__(self, angpix, boxsize, cyl_outer_diameter, cyl_inner_diameter, output_filename):
+    def __init__(self, angpix, boxsize, cyl_outer_diameter, cyl_inner_diameter, output_filename, fibre_weight):
         self.angpix = angpix
         self.boxsize = boxsize
         self.cyl_outer_diameter = int(cyl_outer_diameter/self.angpix)
         self.cyl_inner_diameter = int(cyl_inner_diameter/self.angpix)
-        self.output_filename
-
-        print(self.cyl_inner_diameter, self.cyl_outer_diameter)
+        self.fibre_weight = fibre_weight
+        self.output_filename = output_filename
 
         self.cos_edge = 5
         self.cylinder_vol = np.zeros((self.boxsize,self.boxsize,self.boxsize), dtype = 'float16')
         self.center_point = (self.boxsize/2, self.boxsize/2)
 
-        #self.inner_circle = self.make2Dcircle(0.25, self.cyl_inner_diameter/2)
+        self.inner_circle = self.make2Dcircle((1-self.fibre_weight), self.cyl_inner_diameter/2)
         self.outer_circle = self.make2Dcircle(1, self.cyl_outer_diameter/2)
 
         self.makeMask()
@@ -171,7 +170,7 @@ class makeUnevenMask(object):
     def makeMask(self):
 
         for z in range(self.boxsize):
-            self.cylinder_vol[z,:,:] = self.outer_circle#np.subtract(self.outer_circle, self.inner_circle)
+            self.cylinder_vol[z,:,:] = np.subtract(self.outer_circle, self.inner_circle)
 
 
     def make2Dcircle(self, density_value, outer_radius):
@@ -202,7 +201,6 @@ class makeUnevenMask(object):
                 #is the point in the outer cosine region?
                 elif radial_distance > outer_radius and radial_distance < outer_radius + self.cos_edge:
                     circle_2d[x,y] = math.cos(math.pi * (((radial_distance - outer_radius) /self.cos_edge)/2)) * density_value
-                    print(circle_2d[x,y])
                     continue
         return circle_2d
 
@@ -297,7 +295,7 @@ class makeSemiCircleMask(object):
         with mrc.new(self.output_filename, overwrite = True) as mrc_file:
             mrc_file.set_data(self.semicircle3d_vol)
             mrc_file.voxel_size = self.angpix
-        print('Saved twisting semi-circle mask as %s. IMPORTANT: THIS MASK HAS NO COSINE EDGE - REMEMVER TO MAKE ON IN RELION' % (self.output_filename))
+        print('Saved twisting semi-circle mask as %s. IMPORTANT: THIS MASK HAS NO COSINE EDGE - REMEMBER TO MAKE ON IN RELION' % (self.output_filename))
 
 
 if __name__ == '__main__':
@@ -305,20 +303,21 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--angpix', nargs = '?', const = 1.7875, type = float, help = 'The pixel size of the output mask')
-    parser.add_argument('--box_size', '--box' nargs = '?', type = int, const = 256, help = 'The box size of the output mask')
-    parser.add_argument('--out', '--o', nargs = '?', const = 'temp.mrc', help = 'Filename for output map, default is temp.mrc'  )
+    parser.add_argument('--angpix', nargs = '?', const = 1.7875, default = 1.7875, type = float, help = 'The pixel size of the output mask')
+    parser.add_argument('--boxsize', '--box', nargs = '?', type = int, const = 256, default = 256, help = 'The box size of the output mask')
+    parser.add_argument('--out', '--o', nargs = '?', const = 'temp.mrc', default = 'temp.mrc', help = 'Filename for output map, default is temp.mrc'  )
 
     parser.add_argument('--dnaJ_mask', '--J', action = 'store_true', help = 'Generate a oscillating density mask to add J seperation to map')
     parser.add_argument('--reduce_fibre', '--R', action = 'store_true', help = 'Generate a mask which downweights the fibre density')
     parser.add_argument('--semi_circle', '--S', action = 'store_true', help = 'Generate a semi-circle shaped mask - IMPORTANT: THIS MASK HAS NO SOFT EDGE')
 
-    parser.add_argument('--cyl_outer_diameter', '--outer' nargs = 1, type = int, required = True, help = 'The outer diameter of respective masks in angstroms')
-    parser.add_argument('--fibre_diameter', '--fwidth' nargs = 1, type = int, required = False, help = 'The inner diameter of the mask i.e. diameter of fibre in angstroms')
-    parser.add_argument('--helical_rise', '--rise' nargs = '?', type = float, const = 40, help = 'The helical rise of DnaJ seperation in angstroms')
-    parser.add_argument('--helical_twist', '--twist' nargs = 1, type = float, required = False, help = 'The helical twist for one 4.75A step in degrees')
-    parser.add_argument('--layer_thickness', '--layer', nargs = '?', const = 16, type = int, help = 'Thickness of DNAJ layer (angstroms) - default 16 A'  )
-    parse.add_argument('--start_angle', '--ang', nargs = '?', const = 60, type = int, help = 'The starting angle for plotting a twisting semi circle mask')
+    parser.add_argument('--cyl_outer_diameter', '--outer', type = int, required = True, help = 'The outer diameter of respective masks in angstroms')
+    parser.add_argument('--fibre_diameter', '--fwidth', type = int, required = False, help = 'The inner diameter of the mask i.e. diameter of fibre in angstroms')
+    parser.add_argument('--helical_rise', '--rise', nargs = '?', type = float, const = 40, default = 40, help = 'The helical rise of DnaJ seperation in angstroms')
+    parser.add_argument('--helical_twist', '--twist', type = float, required = False, help = 'The helical twist for one 4.75A step in degrees')
+    parser.add_argument('--layer_thickness', '--layer', nargs = '?', const = 16, default = 16, type = int, help = 'Thickness of DNAJ layer (angstroms) - default 16 A'  )
+    parser.add_argument('--start_angle', '--ang', nargs = '?', const = 60, default = 60, type = int, help = 'The starting angle for plotting a twisting semi circle mask')
+    parser.add_argument('--fibre_weight', '--fweight', nargs = '?', const = 0.75, default = 0.75, type = float, help = 'The density level for the fibre when making fibre downweight mask')
 
     args = parser.parse_args()
 
@@ -330,14 +329,14 @@ if __name__ == '__main__':
         elif not args.fibre_diameter:
             quit('Please provide the diameter of the fibre (normally ~140 A) using --fibre_diameter')
 
-        makeDecorationCylinder(args.angpix, args.boxsize, args.helical_rise, args.cyl_outer_diameter, args.cyl_inner_diameter, args.layer_thickness, args.out)
+        makeDecorationCylinder(args.angpix, args.boxsize, args.helical_rise, args.cyl_outer_diameter, args.fibre_diameter, args.layer_thickness, args.out)
 
     elif args.reduce_fibre:
 
         if not args.fibre_diameter:
             quit('Please provide the diameter of the fibre - normally ~140 A')
 
-        makeUnevenMask(args.angpix, args.boxsize, args.cyl_outer_diameter, args.cyl_inner_diameter, args.out)
+        makeUnevenMask(args.angpix, args.boxsize, args.cyl_outer_diameter, args.fibre_diameter, args.out, args.fibre_weight)
 
     elif args.semi_circle:
 
