@@ -472,11 +472,10 @@ class parseAllModelsinDirectory(object):
 
     def _loadAllModelStars(self):
 
-        #put the star files in the right order
+        #put the star files in the right order i.e. it001 -> it025
         self.model_star_list = sorted(self.model_star_list, key = lambda x:int(x[-14:-11]))
 
         for filename in self.model_star_list:
-            print(filename)
             self._readOneModelStar(filename)
             self.number_of_iterations += 1
 
