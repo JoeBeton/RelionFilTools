@@ -1,5 +1,5 @@
-import itertools
 import numpy as np
+import os
 
 
 class readFilamentsFromStarFile(object):
@@ -444,6 +444,91 @@ class readBlockDataFromStarfile(object):
                 write_star.write('\n')
 
             print('New starfile saved as ' + save_file_name + '.star')
+
+class parseAllModelsinDirectory(object):
+
+    def __init__(self, directory):
+        self.directory = directory
+
+        if self.directory[-1] != '/':
+            self.directory += '/'
+
+        self.model_star_list = []
+        self.number_of_classes = 0
+        self.number_of_iterations = 0
+        self.classes = {}
+        self.headers = {}
+
+        self._getAllModelStarFilenames()
+        self._loadAllModelStars()
+
+    def _getAllModelStarFilenames(self):
+
+        dir_list = os.listdir(self.directory)
+
+        for filename in dir_list:
+            if filename[-10:] == 'model.star':
+                self.model_star_list.append(filename)
+
+    def _loadAllModelStars(self):
+
+        #put the star files in the right order
+        self.model_star_list = sorted(self.model_star_list, key = lambda x:int(x[-14:-11]))
+
+        for filename in self.model_star_list:
+            print(filename)
+            self._readOneModelStar(filename)
+            self.number_of_iterations += 1
+
+        #format the data for easy access
+        for key in self.classes.keys():
+            self.classes[key] = list(zip(*self.classes[key]))
+
+    def _readOneModelStar(self, filename):
+
+        self.number_of_classes = 0
+
+        with open(self.directory + filename, 'r') as model_star:
+            line = model_star.readline()
+            while line != 'data_model_classes\n':
+                line = model_star.readline()
+
+            while line != 'data_model_class_1\n':
+                line = model_star.readline()
+                try:
+                    temp_data.append(line)
+                except NameError:
+                    temp_data = [line]
+
+        #Sort out the temp_data into a labelled thing
+        for line in temp_data:
+            if line[0] == '_':
+                header_name = line.split()[0][1:]
+                header_position = int(line.split()[1][1:])
+                self.headers[header_name] = header_position -1
+            elif line.startswith('#'):
+                continue
+            elif line.strip() =='loop_':
+                continue
+            elif line.strip() == 'data_model_class_1':
+                continue
+            elif len(line.strip()) == 0:
+                continue
+            else:
+                try:
+                    data.append(line)
+                except NameError:
+                    data = [line]
+
+        for num, data_line in enumerate(data):
+            try:
+                self.classes[num].append(data_line.split())
+            except KeyError:
+                self.classes[num] = [data_line.split()]
+            self.number_of_classes += 1
+
+    def getClassDistForOneClass(self, class_number):
+        return [float(i) for i in self.classes[class_number][self.headers['rlnClassDistribution']]]
 
 
 if __name__ == '__main__':
