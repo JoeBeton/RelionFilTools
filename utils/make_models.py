@@ -297,7 +297,7 @@ class makeSemiCircleMask(object):
         with mrc.new(self.output_filename, overwrite = True) as mrc_file:
             mrc_file.set_data(self.semicircle3d_vol)
             mrc_file.voxel_size = self.angpix
-        print('Saved twisting semi-circle mask as %s' % (self.output_filename))
+        print('Saved twisting semi-circle mask as %s. IMPORTANT: THIS MASK HAS NO COSINE EDGE - REMEMVER TO MAKE ON IN RELION' % (self.output_filename))
 
 
 if __name__ == '__main__':
