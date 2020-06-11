@@ -297,6 +297,67 @@ class makeSemiCircleMask(object):
             mrc_file.voxel_size = self.angpix
         print('Saved twisting semi-circle mask as %s. IMPORTANT: THIS MASK HAS NO COSINE EDGE - REMEMBER TO MAKE ON IN RELION' % (self.output_filename))
 
+class makeCylinder(object):
+
+    def __init__(self, angpix, boxsize, cyl_outer_diameter, output_filename):
+        self.angpix = angpix
+        self.boxsize = boxsize
+        self.cyl_outer_diameter = cyl_outer_diameter/self.angpix
+        self.cyl_radius = self.cyl_outer_diameter/2
+        self.output_filename = output_filename
+
+        self.cos_edge = 5
+        self.center_point = (self.boxsize/2, self.boxsize/2)
+
+        self.circle2d = np.zeros((self.boxsize, self.boxsize), dtype = 'float16')
+        self.semi_circle3d = np.zeros((self.boxsize, self.boxsize, self.boxsize), dtype = 'float16')
+
+        self.make2Dcircle()
+        self.make3Dcircle()
+        self.saveAsMRC()
+
+    def euclidDistance(self, x, y):
+        return math.sqrt(((self.center_point[0] - x)**2) + (self.center_point[1] - y)**2)
+
+    def make2Dcircle(self):
+
+        #make a 2D circle which is used to build the 3D map
+        x_edge_lower = (self.boxsize/2) - (self.cyl_radius + self.cos_edge)
+        x_edge_upper = (self.boxsize/2) + (self.cyl_radius + self.cos_edge)
+
+        y_edge_lower = (self.boxsize/2) - (self.cyl_radius + self.cos_edge)
+        y_edge_upper = (self.boxsize/2) + (self.cyl_radius + self.cos_edge)
+
+        for x in range(self.boxsize):
+            #Skips over obvious points
+            if x < x_edge_lower or x > x_edge_upper:
+                continue
+            for y in range(self.boxsize):
+                #Skips over obvious points
+                if y < y_edge_lower or y > y_edge_upper:
+                    continue
+
+                #is the point within the outer diameter?
+                radial_distance = self.euclidDistance(x, y)
+                if radial_distance <= self.cyl_radius:
+                    self.circle2d[x,y] = 1
+                    continue
+                #is the point in the outer cosine region?
+                elif radial_distance > self.cyl_radius and radial_distance < self.cyl_radius + self.cos_edge:
+                    self.circle2d[x,y] = math.cos(math.pi * (((radial_distance - self.cyl_radius) /self.cos_edge)/2))
+                    continue
+
+    def make3Dcircle(self):
+
+        for z in range(self.boxsize):
+            self.semi_circle3d[z,:,:] = self.circle2d
+
+    def saveAsMRC(self):
+        with mrc.new(self.output_filename, overwrite = True) as mrc_file:
+            mrc_file.set_data(self.semi_circle3d)
+            mrc_file.voxel_size = self.angpix
+        print('Saved twisting cylinder mask as %s' % (self.output_filename))
+
 
 if __name__ == '__main__':
 
@@ -310,6 +371,7 @@ if __name__ == '__main__':
     parser.add_argument('--dnaJ_mask', '--J', action = 'store_true', help = 'Generate a oscillating density mask to add J seperation to map')
     parser.add_argument('--reduce_fibre', '--R', action = 'store_true', help = 'Generate a mask which downweights the fibre density')
     parser.add_argument('--semi_circle', '--S', action = 'store_true', help = 'Generate a semi-circle shaped mask - IMPORTANT: THIS MASK HAS NO SOFT EDGE')
+    parser.add_argument('--make_cylinder', '--cyl', action = 'store_true', help = 'Make a simple cylinder mask')
 
     parser.add_argument('--cyl_outer_diameter', '--outer', type = int, required = True, help = 'The outer diameter of respective masks in angstroms')
     parser.add_argument('--fibre_diameter', '--fwidth', type = int, required = False, help = 'The inner diameter of the mask i.e. diameter of fibre in angstroms')
@@ -322,7 +384,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.dnaJ_mask:
-        #makeDecorationCylinder(1.7875, 256, 40, 310, 115, 16)
 
         if not args.helical_rise:
             quit('Please provide the helical rise using (probably ~ 40) using --rise')
@@ -344,3 +405,7 @@ if __name__ == '__main__':
             quit('Please provide the helical twist for one 4.75 A step using --twist e.g.: --twist 0.82')
 
         makeSemiCircleMask(args.angpix, args.boxsize, args.cyl_outer_diameter, args.start_angle, args.helical_twist, args.out)
+
+    elif args.make_cylinder:
+
+        makeCylinder(args.angpix, args.boxsize, args.cyl_outer_diameter, args.out)
