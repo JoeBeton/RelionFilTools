@@ -38,7 +38,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input', '--i', nargs = '+', help = 'Class2D/3D job directory (e.g. Class2D/job010/)')
+    parser.add_argument('--input', '--i', nargs = '+', help = 'Class2D/3D job directory (e.g. Class2D/job010/) or directories')
     args = parser.parse_args()
 
     for folder in args.input:
