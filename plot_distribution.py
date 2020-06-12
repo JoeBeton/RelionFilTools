@@ -12,7 +12,7 @@ def plotClassDistributions(job_directory):
     sns.set_style("white", {'font.family': ['sans-serif']})
     sns.set_context("poster", font_scale=0.5)
     sns.color_palette(palette=None)
-    sns.set(rc={'figure.figsize':(23.4,16.54)})
+    #sns.set(rc={'figure.figsize':(23.4,16.54)})
 
     job_classes = parse_star.parseAllModelsinDirectory(job_directory)
 
