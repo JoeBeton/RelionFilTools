@@ -118,6 +118,15 @@ class readFilamentsFromStarFile(object):
 
         return [str(i) for i in self.filaments[filament_number][self.headers[header_name]]]
 
+    def getHelicalTrackLengthStringList(self, filament_number, header_name):
+
+        '''Returns the helical track lengths for one filament as a list of strings
+
+        Need a specific function for removing duplicates as some particles have
+        track length 0.000000 and some -0.000000 in RELION files'''
+
+        return [str(i) if i != '-0.000000' else str('0.000000') for i in self.filaments[filament_number][self.headers['rlnHelicalTrackLengthAngst']]]
+
     def addFilamentDataColumn(self, filament_number, new_data_column, name_of_altered_data_column):
 
         '''Appends a new column of data on a single filament particle stack and

@@ -230,7 +230,7 @@ def removeDuplicates(starfile):
 
     for fil_no in sorted(fil_data.filaments.keys()):
 
-        hel_track_lengths = fil_data.getStringListFilamentColumn(fil_no, 'rlnHelicalTrackLengthAngst')
+        hel_track_lengths = fil_data.getHelicalTrackLengthStringList(fil_no, 'rlnHelicalTrackLengthAngst')
         number_of_duplicates = len(hel_track_lengths) - len(set(hel_track_lengths))
 
         if number_of_duplicates > 0:
