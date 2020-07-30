@@ -246,3 +246,26 @@ def removeDuplicates(starfile):
 
     print('%i duplicate particles were removed from the starfile' % (starting_particles - fil_data.number_of_particles))
     fil_data.writeFilamentsToStarFile()
+
+def mergeStarFiles(starfile1, starfile2):
+
+    starfile1_obj = parse_star.readFilamentsFromStarFile(starfile1)
+    starfile2_obj = parse_star.readFilamentsFromStarFile(starfile2)
+
+    combined_number_of_particles = starfile1_obj.number_of_particles + starfile2_obj.number_of_particles
+    combined_number_of_filaments = starfile1_obj.number_of_filaments + starfile2_obj.number_of_filaments
+
+    print('There are %i number of particles in %i filaments from starfile %s' % (starfile1_obj.number_of_particles, starfile1_obj.number_of_filaments, starfile1))
+    print('There are %i number of particles in %i filaments from starfile %s' % (starfile2_obj.number_of_particles, starfile2_obj.number_of_filaments, starfile2))
+
+    for fil_no in range(starfile2_obj.number_of_filaments):
+        starfile1_obj.addNewFilamentFromOtherStar(starfile2_obj, fil_no)
+
+    if combined_number_of_filaments != starfile1_obj.number_of_filaments:
+        raise ValueError('Number of filaments in the combined starfile is not correct - not sure why')
+    if combined_number_of_particles != starfile1_obj.number_of_particles:
+        raise ValueError('Number of particles in the combined starfile is not correct - not sure why')
+
+    print('There are %i particles from %i filaments in the new starfile' % (starfile1_obj.number_of_particles, starfile1_obj.number_of_filaments))
+
+    starfile1_obj.writeFilamentsToStarFile()
