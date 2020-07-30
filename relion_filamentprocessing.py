@@ -3,6 +3,7 @@ import os
 import argparse
 
 from filtools import unifyparticles, plotparticles, get_helixinimodel2d_angles
+from utils import csparc_ctf
 
 parser = argparse.ArgumentParser()
 
@@ -27,7 +28,11 @@ parser.add_argument('--plot_pdf', '--p', action = 'store_true', help = 'Plot the
 parser.add_argument('--plot_fillenhist', action = 'store_true', help = 'Plot a histogram of the filament lengths')
 parser.add_argument('--compare_starfiles', action = 'store_true', help = 'Plot a histogram of the filament lengths')
 
+parser.add_argument('--merge_stars', action = 'store_true',help = 'Merge 2 starfiles keeping the two sets of filaments seperate')
+
 parser.add_argument('--get_helixinimodel2d_angles', nargs = 1, help = '[angpix] Specialised function for me')
+
+parser.add_argument('--update_csparc_ctf', action = 'store_true', help = '[angpix] Specialised function for me')
 
 args=parser.parse_args()
 
@@ -71,6 +76,15 @@ if args.make_superparticles:
     for starfile in args.input:
         superparticles.make_superparticles(starfile, args.make_superparticles)
 
+if args.merge_stars:
+    if len(args.input) != 2:
+        quit('Please provide two starfiles for this function')
+
+    unifyparticles.mergeStarFiles(args.input[0], args.input[1])
+
+if args.update_csparc_ctf:
+    for starfile in args.input:
+        csparc_ctf.readCsparcCTF(starfile)
 
 if args.plot_pdf:
     for starfile in args.input:
