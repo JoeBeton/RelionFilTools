@@ -152,7 +152,8 @@ class readFilamentsFromStarFile(object):
 
     def addNewFilamentFromOtherStar(self, other_star_object, old_fil_no):
 
-        ''' Adds all the filaments from one image from another star file
+        ''' Adds a filament from another star file as a new filament - crucially
+        not inserting the particles with the filaments of
 
         Uses the parse_star object of the other star file
 
@@ -190,6 +191,30 @@ class readFilamentsFromStarFile(object):
         self.fil_no_in_micrograph[mic_name] += 1
         self.number_of_filaments += 1
         self.number_of_particles += other_star_object.filament_no_of_particles[old_fil_no]
+
+    def fixExpansionOneFilament(self, fil_no, reference_star):
+
+        ref_fil_particles = reference_star.getAllFilamentData(fil_no)
+        expanded_fil_particles = self.getAllFilamentData(fil_no)
+
+        ref_fil_rot = reference_star.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')
+        expanded_fil_rot = self.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')
+
+        #identify the expanded particles
+
+
+    def removeFilament(self, fil_no):
+        self.number_of_particles =- self.filament_no_of_particles[fil_no]
+
+        self.filaments.pop(fil_no)
+        self.filament_no_of_particles.pop(fil_no)
+
+        #rename each of the dictionary entries to account for deleted filament
+        for new_fil_no in range(fil_no, self.number_of_filaments):
+            self.filaments[new_fil_no] = self.filaments[new_fil_no + 1]
+        self.filaments.pop(self.number_of_filaments)
+        self.number_of_filaments =- 1
+        pass
 
     def removeParticleData(self, fil_no, particle_no):
 
