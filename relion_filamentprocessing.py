@@ -3,7 +3,7 @@ import os
 import argparse
 
 from filtools import unifyparticles, plotparticles, get_helixinimodel2d_angles
-from utils import csparc_ctf
+#from utils import csparc_ctf
 
 parser = argparse.ArgumentParser()
 
@@ -17,7 +17,6 @@ parser.add_argument('--select_angles', '--sel', nargs = 3, metavar = '[Starfile 
 parser.add_argument('--order_filaments', '--order', action = 'store_true', help = 'Save stafile with filaments ordered')
 parser.add_argument('--remove_duplicates', action = 'store_true', help = 'Remove duplicate particles from starfiles')
 
-
 parser.add_argument('--reset_tilt', action = 'store_true', help = 'Option to fit the tilt values for each filament')
 parser.add_argument('--remove_shortfils', type = int, help = 'Option to remove the particles from filaments shorter than the stated value')
 
@@ -27,8 +26,8 @@ parser.add_argument('--plot_changes', action = 'store_true', help = 'Option to s
 parser.add_argument('--plot_pdf', '--p', action = 'store_true', help = 'Plot the particle data from filaments into a pdf file')
 parser.add_argument('--plot_fillenhist', action = 'store_true', help = 'Plot a histogram of the filament lengths')
 parser.add_argument('--compare_starfiles', action = 'store_true', help = 'Plot a histogram of the filament lengths')
-
 parser.add_argument('--merge_stars', action = 'store_true',help = 'Merge 2 starfiles keeping the two sets of filaments seperate')
+parser.add_argument('--fix_expanded_particles', nargs = 1, type = str, help = 'Merge 2 starfiles keeping the two sets of filaments seperate')
 
 parser.add_argument('--get_helixinimodel2d_angles', nargs = 1, help = '[angpix] Specialised function for me')
 
@@ -82,9 +81,17 @@ if args.merge_stars:
 
     unifyparticles.mergeStarFiles(args.input[0], args.input[1])
 
-if args.update_csparc_ctf:
-    for starfile in args.input:
-        csparc_ctf.readCsparcCTF(starfile)
+if args.fix_expanded_particles:
+    if len(args.input) != 1:
+        raise AttributeError('This function requires a particle expanded starfile as input, please provide one e.g. --i path/to/expanded/starfile.star')
+    if len(args.fix_expanded_particles) != 1:
+        raise AttributeError('Please provide a reference starfile using the --fix_expanded_particles option e.g. --fix_expanded_particles path/to/starfile.star')
+
+    unifyparticles.correctExpandedParticles(args.input[0], args.fix_expanded_particles[0])
+
+#if args.update_csparc_ctf:
+#    for starfile in args.input:
+#        csparc_ctf.readCsparcCTF(starfile)
 
 if args.plot_pdf:
     for starfile in args.input:
