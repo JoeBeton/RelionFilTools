@@ -127,14 +127,15 @@ class readFilamentsFromStarFile(object):
 
         return [str(i) for i in self.filaments[filament_number][self.headers[header_name]]]
 
-    def getHelicalTrackLengthStringList(self, filament_number, header_name):
+    def getHelicalTrackLengthList(self, filament_number):
 
         '''Returns the helical track lengths for one filament as a list of strings
 
         Need a specific function for removing duplicates as some particles have
         track length 0.000000 and some -0.000000 in RELION files'''
 
-        return [str(i) if i != '-0.000000' else str('0.000000') for i in self.filaments[filament_number][self.headers['rlnHelicalTrackLengthAngst']]]
+        #return [str(i) if i != '-0.000000' else str('0.000000') for i in self.filaments[filament_number][self.headers['rlnHelicalTrackLengthAngst']]]
+        return [float(i) for i in self.filaments[filament_number][self.headers['rlnHelicalTrackLengthAngst']]]
 
     def addFilamentDataColumn(self, filament_number, new_data_column, name_of_altered_data_column):
 
@@ -161,7 +162,8 @@ class readFilamentsFromStarFile(object):
         annoying problems with RELION errors: its designed to join subtracted particles
         from the same fibre'''
 
-        mic_name = other_star_object.filaments[old_fil_no][other_star_object.headers['rlnMicrographName']][0]
+        #mic_name = other_star_object.filaments[old_fil_no][other_star_object.headers['rlnMicrographName']][0]
+        mic_name = self.getRlnFilamentNumberandMicrograph(old_fil_no)[1]
 
         #Work out where to start with numbering the new filaments
         try:
@@ -188,11 +190,13 @@ class readFilamentsFromStarFile(object):
 
         #Update the various filament numbers and information
         self.filaments[self.number_of_filaments] = temp_particle_block
+        self.filament_no_of_particles[self.number_of_filaments] = len(other_star_object.getStringListFilamentColumn(old_fil_no, 'rlnOriginXAngst'))
         self.fil_no_in_micrograph[mic_name] += 1
         self.number_of_filaments += 1
         self.number_of_particles += other_star_object.filament_no_of_particles[old_fil_no]
 
-    def fixExpansionOneFilament(self, fil_no, reference_star):
+
+    def fixExpansionOneFilament(self, fil_no, reference_star, expansion_factor):
 
         ref_fil_particles = reference_star.getAllFilamentData(fil_no)
         expanded_fil_particles = self.getAllFilamentData(fil_no)
@@ -200,10 +204,48 @@ class readFilamentsFromStarFile(object):
         ref_fil_rot = reference_star.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')
         expanded_fil_rot = self.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')
 
-        #identify the expanded particles
+        #identify the change in rot angle for expanded particles
+        first_image_name = reference_star.getStringListFilamentColumn(fil_no, 'rlnImageName')[0]
+        expanded_image_name_list = self.getStringListFilamentColumn(fil_no, 'rlnImageName')
 
+        for position, img_name in enumerate(expanded_image_name_list):
+            if img_name == first_image_name:
+                try:
+                    particle_position_list.append(position)
+                except NameError:
+                    particle_position_list = [position]
+        particle_position_list.sort()
+
+        rot_difference = expanded_fil_rot[0] - expanded_fil_rot[1]
+
+        for particle_rot in ref_fil_rot:
+            for expanded_particle_rot in expanded_fil_rot:
+                pass
+
+    def removeFilamentDuplicateParticles(self, fil_no):
+
+        hel_track_lengths = self.getHelicalTrackLengthList(fil_no)
+        number_of_duplicates = self.filament_no_of_particles[fil_no] - len(set(hel_track_lengths))
+        #number_of_duplicates = len(hel_track_lengths) - len(set(hel_track_lengths))
+
+        if number_of_duplicates > 0:
+            for duplicate in range(number_of_duplicates):
+                for i, track_length in enumerate(hel_track_lengths):
+                    try:
+                        duplicate_position = hel_track_lengths.index(track_length, i+1)
+                        hel_track_lengths.pop(i)
+                        self.removeParticleData(fil_no, i)
+                        break
+                    except ValueError:
+                        continue
+        else:
+            return 1
 
     def removeFilament(self, fil_no):
+
+        '''Remove all the particles from one filament and update all the relevant
+        variables to account for this '''
+
         self.number_of_particles =- self.filament_no_of_particles[fil_no]
 
         self.filaments.pop(fil_no)
@@ -211,20 +253,25 @@ class readFilamentsFromStarFile(object):
 
         #rename each of the dictionary entries to account for deleted filament
         for new_fil_no in range(fil_no, self.number_of_filaments):
-            self.filaments[new_fil_no] = self.filaments[new_fil_no + 1]
+            self.filaments[new_fil_no] = self.filaments[new_fil_no + 1][:]
+            self.filament_no_of_particles[new_fil_no] = int(self.filament_no_of_particles)
+
         self.filaments.pop(self.number_of_filaments)
+        #self.filament_no_of_particles.pop(self.number_of_filaments)
         self.number_of_filaments =- 1
-        pass
 
     def removeParticleData(self, fil_no, particle_no):
-
         particles_from_filament = list(zip(*self.getAllFilamentData(fil_no)))
         particles_from_filament.pop(particle_no)
         self.number_of_particles -= 1
+        self.filament_no_of_particles[fil_no] -= 1
         self.filaments[fil_no] = list(zip(*particles_from_filament))
 
     def getNumberofParticlesinFilament(self, filament_no):
-        return len(self.filaments[filament_no][self.headers['rlnMicrographName']])
+        '''Defunct function as now the filament_no_of_particles dict keeps track of this
+
+        will delete soon'''
+        return self.filament_no_of_particles[fil_no]
 
     def getRlnFilamentNumberandMicrograph(self, filament_no):
 

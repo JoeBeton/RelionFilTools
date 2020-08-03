@@ -219,7 +219,6 @@ def selectParticlesbyAlignmentAngleRange(starfile_path, rln_header_identifier, l
     particle_data.writeBlockDatatoStar()
 
 def orderFilaments(starfile):
-
     fil_data = parse_star.readFilamentsFromStarFile(starfile)
     fil_data.writeFilamentsToStarFile()
 
@@ -229,8 +228,10 @@ def removeDuplicates(starfile):
     starting_particles = fil_data.number_of_particles
 
     for fil_no in sorted(fil_data.filaments.keys()):
+        fil_data.removeFilamentDuplicateParticles(fil_no)
 
-        hel_track_lengths = fil_data.getHelicalTrackLengthStringList(fil_no, 'rlnHelicalTrackLengthAngst')
+        '''
+        hel_track_lengths = fil_data.getHelicalTrackLengthList(fil_no)
         number_of_duplicates = len(hel_track_lengths) - len(set(hel_track_lengths))
 
         if number_of_duplicates > 0:
@@ -243,7 +244,7 @@ def removeDuplicates(starfile):
                         break
                     except ValueError:
                         continue
-
+        '''
     print('%i duplicate particles were removed from the starfile' % (starting_particles - fil_data.number_of_particles))
     fil_data.writeFilamentsToStarFile()
 
@@ -266,6 +267,26 @@ def mergeStarFiles(starfile1, starfile2):
     if combined_number_of_particles != starfile1_obj.number_of_particles:
         raise ValueError('Number of particles in the combined starfile is not correct - not sure why')
 
+    no_of_particles_before_dupremove = starfile1_obj.number_of_particles
+    for fil_no in sorted(starfile1_obj.filaments.keys()):
+        starfile1_obj.removeFilamentDuplicateParticles(fil_no)
+    no_of_particles_after_dupremove = starfile1_obj.number_of_particles
+
     print('There are %i particles from %i filaments in the new starfile' % (starfile1_obj.number_of_particles, starfile1_obj.number_of_filaments))
+    if no_of_particles_before_dupremove - no_of_particles_after_dupremove != 0:
+        print('%i duplicate particles were removed from the merged starfile' % (no_of_particles_before_dupremove - no_of_particles_after_dupremove))
 
     starfile1_obj.writeFilamentsToStarFile()
+
+def correctExpandedParticles(expanded_starfile, reference_starfile):
+
+    reference_star = parse_star.readFilamentsFromStarFile(reference_starfile)
+    expanded_star = parse_star.readFilamentsFromStarFile(expanded_starfile)
+
+    expansion_factor = expanded_star.number_of_particles/reference_star.number_of_particles
+
+    print('There are %i particles in %s and %i particles in the reference starfile' %(expanded_star.number_of_particles, expanded_starfile, reference_star.number_of_particles))
+    print('The particles have been expanded by a factor of %i' % (int(expansion_factor)))
+
+    for fil_no in range(expanded_star.number_of_filaments):
+        reference_star.fixExpansionOneFilament(fil_no, reference_starfile, expansion_factor)
