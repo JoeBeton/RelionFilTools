@@ -262,11 +262,6 @@ def mergeStarFiles(starfile1, starfile2):
     for fil_no in range(starfile2_obj.number_of_filaments):
         starfile1_obj.addNewFilamentFromOtherStar(starfile2_obj, fil_no)
 
-    if combined_number_of_filaments != starfile1_obj.number_of_filaments:
-        raise ValueError('Number of filaments in the combined starfile is not correct - not sure why')
-    if combined_number_of_particles != starfile1_obj.number_of_particles:
-        raise ValueError('Number of particles in the combined starfile is not correct - not sure why')
-
     no_of_particles_before_dupremove = starfile1_obj.number_of_particles
     for fil_no in sorted(starfile1_obj.filaments.keys()):
         starfile1_obj.removeFilamentDuplicateParticles(fil_no)
@@ -275,7 +270,8 @@ def mergeStarFiles(starfile1, starfile2):
     print('There are %i particles from %i filaments in the new starfile' % (starfile1_obj.number_of_particles, starfile1_obj.number_of_filaments))
     if no_of_particles_before_dupremove - no_of_particles_after_dupremove != 0:
         print('%i duplicate particles were removed from the merged starfile' % (no_of_particles_before_dupremove - no_of_particles_after_dupremove))
-
+    else:
+        print('No duplicate particles detected in new combined starfile')
     starfile1_obj.writeFilamentsToStarFile()
 
 def correctExpandedParticles(expanded_starfile, reference_starfile):
