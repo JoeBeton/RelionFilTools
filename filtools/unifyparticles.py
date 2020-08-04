@@ -37,6 +37,7 @@ def reset_tilt(starfile_path, plot_changes = False, save_changes = True):
         filament_data.addFilamentDataColumn(filament_no, reset_tilt, 'rlnAngleTilt')
 
     print('The tilt angles for all filaments have been fitted')
+
     filament_data.writeFilamentsToStarFile()
 
     if plot_changes:
@@ -184,7 +185,7 @@ def removeShortFilsFromStarfile(starfile_path, minimum_length):
 
     print('There are %i filaments in the saved star file' % filament_data.number_of_filaments)
 
-    filament_data.writeFilamentsToStarFile()
+    filament_data.writeFilamentsToStarFile(suffix = '_noShortFils')
 
 def removeShortFilsFromObject(filament_object, minimum_length):
 
@@ -247,7 +248,7 @@ def removeDuplicates(starfile):
                         continue
         '''
     print('%i duplicate particles were removed from the starfile' % (starting_particles - fil_data.number_of_particles))
-    fil_data.writeFilamentsToStarFile()
+    fil_data.writeFilamentsToStarFile(suffix = '_duplicates_removed')
 
 def mergeStarFiles(starfile1, starfile2):
 
@@ -273,7 +274,13 @@ def mergeStarFiles(starfile1, starfile2):
         print('%i duplicate particles were removed from the merged starfile' % (no_of_particles_before_dupremove - no_of_particles_after_dupremove))
     else:
         print('No duplicate particles detected in new combined starfile')
-    starfile1_obj.writeFilamentsToStarFile()
+
+    try:
+        starfile_2_job_name = starfile2.split('/')[-2]
+    except IndexError: #directory layout doesn't follow the RELION format
+        starfile_2_job_name = ''
+
+    starfile1_obj.writeFilamentsToStarFile(suffix = '_merged' + starfile_2_job_name)
 
 def correctExpandedParticles(expanded_starfile, reference_starfile):
 

@@ -117,6 +117,12 @@ class readFilamentsFromStarFile(object):
                 self.filament_no_of_particles[self.number_of_filaments] = len(particle_position_list)
                 self.number_of_filaments += 1
 
+    def reloadFilamentObject(self):
+
+        '''This function reassembles the self object which can be necessary after
+        making big changes to the object - e.g. merging two big star files '''
+
+
 
     def getAllFilamentData(self, filament_number):
 
@@ -189,9 +195,6 @@ class readFilamentsFromStarFile(object):
             self.rln_fil_no_in_micrograph[mic_name] = 0
             new_fil_no = 1
 
-        #print(self.fil_no_in_micrograph[mic_name])
-        #print(new_fil_no)
-
         #make sure the header information for the new filaments is in the correct format
         temp_particle_block = other_star_object.getAllFilamentData(old_fil_no)
 
@@ -207,8 +210,6 @@ class readFilamentsFromStarFile(object):
                 raise KeyError('The header option %s is present in the %s starfile but not the %s starfile' % (header, self.filename, other_star_object.filename))
             else:
                 temp_particle_block[self.headers[header]] = other_star_object.getStringListFilamentColumn(old_fil_no, header)
-
-        #print(temp_particle_block[self.headers['rlnHelicalTubeID']])
 
         #Update the various filament numbers and information
         self.filaments[self.number_of_filaments] = temp_particle_block
@@ -345,7 +346,7 @@ class readFilamentsFromStarFile(object):
 
         return (micrograph_name, rln_tube_number)
 
-    def writeFilamentsToStarFile(self, save_updated_data = True):
+    def writeFilamentsToStarFile(self, save_updated_data = True, suffix = None):
 
         '''Writes the data from all the filaments to a starfile, updating columns
         of edited data as specified
@@ -353,7 +354,10 @@ class readFilamentsFromStarFile(object):
         Need to do a fair bit of faffing around for this due to the way the
         data is loaded and handled'''
 
-        save_file_name = self.filename[:-5] + '_updated'
+        if not suffix:
+            save_file_name = self.filename[:-5] + '_updated'
+        else:
+            save_file_name = self.filename[:-5] + suffix
 
         #Make an ordered list of the original headers
         for key in self.headers.keys():
