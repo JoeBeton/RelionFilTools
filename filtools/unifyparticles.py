@@ -189,6 +189,7 @@ def removeShortFilsFromStarfile(starfile_path, minimum_length):
 def removeShortFilsFromObject(filament_object, minimum_length):
 
     '''Remove filaments with less than specified number of particles '''
+
     print('There are %i filaments in the input star file' % filament_object.number_of_filaments)
 
     for fil_no in range(filament_object.number_of_filaments):
@@ -285,4 +286,4 @@ def correctExpandedParticles(expanded_starfile, reference_starfile):
     print('The particles have been expanded by a factor of %i' % (int(expansion_factor)))
 
     for fil_no in range(expanded_star.number_of_filaments):
-        reference_star.fixExpansionOneFilament(fil_no, reference_starfile, expansion_factor)
+        reference_star.fixExpansionOneFilament(1, reference_starfile, expansion_factor)
