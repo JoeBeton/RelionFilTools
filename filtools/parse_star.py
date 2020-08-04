@@ -174,7 +174,7 @@ class readFilamentsFromStarFile(object):
         self.new_data_headers[name_of_altered_data_column] = new_column_number
         self.filaments[filament_number] = filament_data
 
-    def addNewFilamentFromOtherStar(self, other_star_object, old_fil_no):
+    def addNewFilamentFromOtherStar(self, other_star_object, other_fil_no):
 
         ''' Adds a filament from another star file as a new filament - crucially
         not inserting the particles with the filaments of
@@ -185,39 +185,39 @@ class readFilamentsFromStarFile(object):
         annoying problems with RELION errors: its designed to join subtracted particles
         from the same fibre'''
 
-        #mic_name = other_star_object.filaments[old_fil_no][other_star_object.headers['rlnMicrographName']][0]
-        mic_name = self.getRlnFilamentNumberandMicrograph(old_fil_no)[0]
+        mic_name = other_star_object.getRlnFilamentNumberandMicrograph(other_fil_no)[0]
 
         #Work out where to start with numbering the new filaments
         try:
             new_fil_no = self.rln_fil_no_in_micrograph[mic_name] + 1
         except KeyError: #possible error where particles from one image are only in new starfile
             self.rln_fil_no_in_micrograph[mic_name] = 0
+            self.fil_no_in_micrograph[mic_name] = 0
             new_fil_no = 1
 
         #make sure the header information for the new filaments is in the correct format
-        temp_particle_block = other_star_object.getAllFilamentData(old_fil_no)
+        temp_particle_block = other_star_object.getAllFilamentData(other_fil_no)
 
         for header in self.headers.keys():
             #Give the filaments from the new data an original tube number - should help avoid RELION errors/bugs
             if header == 'rlnHelicalTubeID':
-                temp_particle_block[self.headers[header]] = [new_fil_no for _ in range(other_star_object.filament_no_of_particles[old_fil_no])]
+                temp_particle_block[self.headers[header]] = [new_fil_no for _ in range(other_star_object.filament_no_of_particles[other_fil_no])]
                 continue
             #reorganise the new data so it matches the "old" star file
             try:
-                other_star_object.filaments[other_star_object.headers[header]]
+                other_star_object.headers[header]
             except KeyError:
                 raise KeyError('The header option %s is present in the %s starfile but not the %s starfile' % (header, self.filename, other_star_object.filename))
             else:
-                temp_particle_block[self.headers[header]] = other_star_object.getStringListFilamentColumn(old_fil_no, header)
+                temp_particle_block[self.headers[header]] = other_star_object.getStringListFilamentColumn(other_fil_no, header)
 
         #Update the various filament numbers and information
         self.filaments[self.number_of_filaments] = temp_particle_block
-        self.filament_no_of_particles[self.number_of_filaments] = len(other_star_object.getStringListFilamentColumn(old_fil_no, 'rlnOriginXAngst'))
+        self.filament_no_of_particles[self.number_of_filaments] = other_star_object.filament_no_of_particles[other_fil_no]
         self.fil_no_in_micrograph[mic_name] += 1
         self.number_of_filaments += 1
         self.rln_fil_no_in_micrograph[mic_name] += 1
-        self.number_of_particles += other_star_object.filament_no_of_particles[old_fil_no]
+        self.number_of_particles += other_star_object.filament_no_of_particles[other_fil_no]
 
     def fixExpansionOneFilament(self, fil_no, reference_star, expansion_factor):
 
