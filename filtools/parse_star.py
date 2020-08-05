@@ -122,7 +122,7 @@ class readFilamentsFromStarFile(object):
         '''This function reassembles the self object which can be necessary after
         making big changes to the object - e.g. merging two big star files '''
 
-
+        pass
 
     def getAllFilamentData(self, filament_number):
 
@@ -140,6 +140,10 @@ class readFilamentsFromStarFile(object):
         except ValueError: #happens when data column contains strings e.g. micrograph name
             return np.array(self.filaments[filament_number][self.headers[header_name]])
 
+    def getFilamentColumnSpecificDecimalPlaces(self, filament_number, header_name, decimal_places):
+
+        return [round(float(i), decimal_places) for i in self.filaments[filament_number][self.headers[header_name]]]
+
     def getStringListFilamentColumn(self, filament_number, header_name):
 
         '''Returns the column data as a list of strings'''
@@ -156,9 +160,9 @@ class readFilamentsFromStarFile(object):
         #return [str(i) if i != '-0.000000' else str('0.000000') for i in self.filaments[filament_number][self.headers['rlnHelicalTrackLengthAngst']]]
         return [float(i) for i in self.filaments[filament_number][self.headers['rlnHelicalTrackLengthAngst']]]
 
-    def getTupleFilamentDataColumnSpecificParticles(self, header, fil_no, particle_array):
+    def getFilamentDataColumnSpecificParticles(self, header, fil_no, particle_positions):
 
-        return [self.filaments[filament_number][self.headers[header]][i] for i in particle_array]
+        return [self.filaments[fil_no][self.headers[header]][i] for i in particle_positions]
 
     def addFilamentDataColumn(self, filament_number, new_data_column, name_of_altered_data_column):
 
@@ -173,6 +177,23 @@ class readFilamentsFromStarFile(object):
 
         self.new_data_headers[name_of_altered_data_column] = new_column_number
         self.filaments[filament_number] = filament_data
+
+    def addNewFilament(self, new_filament_data, mic_name):
+
+        #some test needs to be inserted to check its all in the correct format
+
+        self.filaments[self.number_of_filaments] = new_filament_data
+        self.filament_no_of_particles[self.number_of_filaments] = len(new_filament_data[0])
+        self.number_of_particles += len(new_filament_data[0])
+        try:
+            self.fil_no_in_micrograph[mic_name] += 1
+        except KeyError:
+            self.fil_no_in_micrograph[mic_name] = 1
+        try:
+            self.rln_fil_no_in_micrograph[mic_name] += 1
+        except KeyError:
+            self.rln_fil_no_in_micrograph[mic_name] = 1
+        self.number_of_filaments += 1
 
     def addNewFilamentFromOtherStar(self, other_star_object, other_fil_no):
 
@@ -219,74 +240,75 @@ class readFilamentsFromStarFile(object):
         self.rln_fil_no_in_micrograph[mic_name] += 1
         self.number_of_particles += other_star_object.filament_no_of_particles[other_fil_no]
 
-    def fixExpansionOneFilament(self, fil_no, reference_star, expansion_factor):
+    def fixExpansionOneFilament(self, fil_no, reference_star_object, expansion_factor):
 
-        ref_fil_particles = reference_star.getAllFilamentData(fil_no)
+        ref_fil_particles = reference_star_object.getAllFilamentData(fil_no)
         expanded_fil_particles = self.getAllFilamentData(fil_no)
 
-        ref_fil_rot = reference_star.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')
-        expanded_fil_rot = self.getNumpyFilamentColumn(fil_no, 'rlnAngleRot')
+        ref_fil_rot = reference_star_object.getFilamentColumnSpecificDecimalPlaces(fil_no, 'rlnAngleRot', 2)
+        expanded_fil_rot = self.getFilamentColumnSpecificDecimalPlaces(fil_no, 'rlnAngleRot', 2)
 
         #identify the change in rot angle for expanded particles
-        first_image_name = reference_star.getStringListFilamentColumn(fil_no, 'rlnImageName')[0]
+        #first_image_name = reference_star_object.getStringListFilamentColumn(fil_no, 'rlnImageName')[0]
+        reference_image_names = reference_star_object.getStringListFilamentColumn(fil_no, 'rlnImageName')
+        first_image_name = reference_image_names[0]
         expanded_image_name_list = self.getStringListFilamentColumn(fil_no, 'rlnImageName')
-        mic_name = self.getStringListFilamentColumn(fil_no, 'rlnImageName')[0]
+        mic_name = self.getStringListFilamentColumn(fil_no, 'rlnMicrographName')[0]
 
-        #Not sure what this is supposed to achieve
-        for position, img_name in enumerate(expanded_image_name_list):
-            if img_name == first_image_name:
+        #build a dictionary that points to where each set of expanded particles are
+        expanded_particle_position_dict = {}
+        for image_name in reference_image_names:
+            for i, expanded_image_name in enumerate(expanded_image_name_list):
+                if image_name == expanded_image_name:
+                    try:
+                        expanded_particle_position_dict[image_name].append(i)
+                    except KeyError:
+                        expanded_particle_position_dict[image_name] = [i]
+
+        #find rot angle change between expanded particles
+        min_rot_angle_diff = 1e9
+        for particle_position in expanded_particle_position_dict[first_image_name]:
+            try:
+                rot_difference = abs(prev_rot - expanded_fil_rot[particle_position])
+            except NameError:
+                prev_rot = expanded_fil_rot[particle_position]
+            else:
+                if rot_difference < min_rot_angle_diff:
+                    min_rot_angle_diff = round(rot_difference, 2)
+
+        #Following code assembled dictionaries that points to where each expanded particle is in the original filament
+        new_filament_positions = {} #dictionary containing the positions of each set of expanded filaments
+        for i, image_name in enumerate(reference_image_names):
+            for p_position in expanded_particle_position_dict[image_name]:
+
+                rot_change = round(ref_fil_rot[i] - expanded_fil_rot[p_position], 2)
+                expanded_particle_set = int(rot_change/min_rot_angle_diff)
+
                 try:
-                    particle_position_list.append(position)
-                except NameError:
-                    particle_position_list = [position]
-        particle_position_list.sort()
+                    new_filament_positions[expanded_particle_set].append(p_position)
+                except KeyError:
+                    new_filament_positions[expanded_particle_set] = [p_position]
 
-        #get the minimum rot_difference between expanded particles - assumes star is not in order
-        #This should probably go into its own function somewhere
-        p_count = 0
-        for i, img_name in expanded_image_name_list:
-            min_rot_angle_diff = 1e9
-            if first_image_name == img_name:
-                p_count =+ 1
-                try:
-                    rot_angle_diff = abs(rot - expanded_fil_rot[i])
-                except NameError:
-                    rot = expanded_fil_rot[i]
-                    continue
-                else:
-                    if rot_angle_diff < min_rot_angle_diff:
-                        min_rot_angle_diff = rot_angle_diff
-            if pcount == expansion_factor:
-                break
-        rot_difference = min_rot_angle_diff
-
-        new_filaments[0] = ref_fil_particles
-
-        for expand_factor in range(1, expansion_factor):
-            for particle_rot in ref_fil_rot:
-                for i, expanded_particle_rot in enumerate(expanded_fil_rot):
-                    if abs(expanded_particle_rot - particle_rot)/(expand_factor-1) == rot_difference:
-                        try:
-                            new_filament_positions[expand_factor].append(i)
-                        except KeyError:
-                            new_filaments[expand_factor] = [i]
-
-        #make a new dictionary new_filaments which contains all the particle data for each expanded set
-        for expanded_fil_keys in sorted(new_filament.keys()):
-            new_tube_no = self.fil_no_in_micrograph[mic_name] + expanded_fil_keys
-            temp_particle_block = reference_star.getAllFilamentData(fil_no)
+        #make a new dictionary now containing all the particle data for each expanded set
+        new_filaments = {}
+        for i, expansion_coeff in enumerate(sorted(new_filament_positions.keys())):
+            #if expansion_coeff != 0:
+            new_tube_ID = self.rln_fil_no_in_micrograph[mic_name] + i
+            #print(new_tube_ID)
+            temp_particle_block = reference_star_object.getAllFilamentData(fil_no)
 
             for header in self.headers.keys():
                 #Give the filaments from the new data an original tube number - should help avoid RELION errors/bugs
                 if header == 'rlnHelicalTubeID':
-                    temp_particle_block[self.headers[header]] = tuple([new_fil_no for _ in range(other_star_object.filament_no_of_particles[old_fil_no])])
+                    temp_particle_block[self.headers[header]] = [new_tube_ID for _ in range(reference_star_object.filament_no_of_particles[fil_no])]
                     continue
+                temp_particle_block[self.headers[header]] = self.getFilamentDataColumnSpecificParticles(header, fil_no, new_filament_positions[expansion_coeff])
 
-                #reorganise the new data so it matches the "old" star file
-                temp_particle_block[self.headers[header]] = self.getTupleFilamentDataColumnSpecificParticles(header, fil_no, new_filaments[expanded_fil_keys])
+            new_filaments[expansion_coeff] = temp_particle_block[:]
 
-            new_filaments[expanded_fil_keys] = temp_particle_block
-
+        #actually add these new filaments to self.filaments etc
+        for expanded_fil_key in sorted(new_filaments.keys()):
+            self.addNewFilament(new_filaments[expanded_fil_key], mic_name)
 
     def removeFilamentDuplicateParticles(self, fil_no):
 
@@ -310,21 +332,53 @@ class readFilamentsFromStarFile(object):
     def removeFilament(self, fil_no):
 
         '''Remove all the particles from one filament and update all the relevant
-        variables to account for this '''
+        variables to account for this
+
+        This function is slow if running on a large number of filaments - in which
+        case use the removeMultipleFilaments function'''
+
+        mic_name = self.getStringListFilamentColumn(fil_no, 'rlnMicrographName')[0]
 
         self.number_of_particles =- self.filament_no_of_particles[fil_no]
-
         self.filaments.pop(fil_no)
         self.filament_no_of_particles.pop(fil_no)
+        #self.number_of_filaments -= 1
 
         #rename each of the dictionary entries to account for deleted filament
         for new_fil_no in range(fil_no, self.number_of_filaments):
             self.filaments[new_fil_no] = self.filaments[new_fil_no + 1][:]
-            self.filament_no_of_particles[new_fil_no] = int(self.filament_no_of_particles)
+            self.filament_no_of_particles[new_fil_no] = int(self.filament_no_of_particles[new_fil_no + 1])
+
+        self.fil_no_in_micrograph[mic_name] =- 1
+        self.rln_fil_no_in_micrograph[mic_name] =- 1
 
         self.filaments.pop(self.number_of_filaments)
-        #self.filament_no_of_particles.pop(self.number_of_filaments)
+        self.filament_no_of_particles.pop(self.number_of_filaments)
         self.number_of_filaments =- 1
+
+    def removeMultipleFilaments(self, filament_numbers):
+
+        for fil_no in filament_numbers:
+            mic_name = self.getStringListFilamentColumn(fil_no, 'rlnMicrographName')[0]
+            self.number_of_particles =- self.filament_no_of_particles[fil_no]
+            self.filaments.pop(fil_no)
+            self.filament_no_of_particles.pop(fil_no)
+            self.number_of_filaments -= 1
+            self.fil_no_in_micrograph[mic_name] =- 1
+            self.rln_fil_no_in_micrograph[mic_name] =- 1
+
+        #fixes the numbering system for consistency
+        for i, fil_no in enumerate(sorted(self.filaments.keys())):
+            if i != fil_no:
+                self.filaments[i] = self.filaments[fil_no]
+                self.filament_no_of_particles[i] = self.filaments[fil_no]
+
+        for i, fil_no in enumerate(sorted(self.filaments.keys())):
+            if fil_no < self.number_of_filaments:
+                continue
+            else:
+                self.filaments.pop(fil_no)
+                self.filament_no_of_particles.pop(fil_no)
 
     def removeParticleData(self, fil_no, particle_no):
         particles_from_filament = list(zip(*self.getAllFilamentData(fil_no)))
@@ -337,6 +391,7 @@ class readFilamentsFromStarFile(object):
         '''Defunct function as now the filament_no_of_particles dict keeps track of this
 
         will delete soon'''
+
         return self.filament_no_of_particles[fil_no]
 
     def getRlnFilamentNumberandMicrograph(self, filament_no):
@@ -389,7 +444,7 @@ class readFilamentsFromStarFile(object):
                 write_star.write('_%s #%i\n' % (header[1], number + 1))
 
             #Write out the data
-            for filament_number in range(self.number_of_filaments):
+            for filament_number in sorted(self.filaments.keys()):
                 all_filament_data = []
 
                 #Can't just shunt the data directly into text file due to abstract method of writing new data
@@ -402,7 +457,6 @@ class readFilamentsFromStarFile(object):
                     [write_star.write('%s\t' % j) for j in i]
                     write_star.write('\n')
         print('New starfile saved as ' + save_file_name + '.star')
-
 
 class readBlockDataFromStarfile(object):
 
