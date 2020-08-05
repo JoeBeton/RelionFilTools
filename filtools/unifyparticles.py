@@ -284,13 +284,25 @@ def mergeStarFiles(starfile1, starfile2):
 
 def correctExpandedParticles(expanded_starfile, reference_starfile):
 
-    reference_star = parse_star.readFilamentsFromStarFile(reference_starfile)
+    reference_star_object = parse_star.readFilamentsFromStarFile(reference_starfile)
     expanded_star = parse_star.readFilamentsFromStarFile(expanded_starfile)
 
-    expansion_factor = expanded_star.number_of_particles/reference_star.number_of_particles
+    expansion_factor = expanded_star.number_of_particles/reference_star_object.number_of_particles
 
-    print('There are %i particles in %s and %i particles in the reference starfile' %(expanded_star.number_of_particles, expanded_starfile, reference_star.number_of_particles))
+    expansion_factor = int(expansion_factor)
+
+    print('There are %i particles from %i filaments in the expanded starfile' % (expanded_star.number_of_particles, expanded_star.number_of_filaments))
+    print('There are %i particles from %i filaments in the reference starfile' % (reference_star_object.number_of_particles, reference_star_object.number_of_filaments))
     print('The particles have been expanded by a factor of %i' % (int(expansion_factor)))
 
     for fil_no in range(expanded_star.number_of_filaments):
-        reference_star.fixExpansionOneFilament(1, reference_starfile, expansion_factor)
+        expanded_star.fixExpansionOneFilament(fil_no, reference_star_object, expansion_factor)
+
+    #remove the remaining non-fixed fils
+    expanded_star.removeMultipleFilaments([i for i in range(reference_star_object.number_of_filaments)])
+    #for fil_no in range(reference_star_object.number_of_filaments):
+    #    expanded_star.removeFilament(fil_no)
+
+    print('There are %i particles from %i filaments in the expanded starfile' % (expanded_star.number_of_particles, expanded_star.number_of_filaments))
+
+    expanded_star.writeFilamentsToStarFile(suffix = '_unexpanded')
