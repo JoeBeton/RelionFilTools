@@ -551,10 +551,10 @@ class readBlockDataFromStarfile(object):
         if type(new_data_column) is not list or not np.ndarray:
             raise TypeError('Only lists or numpy arrays can be used as data columns')
 
-        if len(new_data_column) != self.number_of_particles or len(new_data_column[0]) != 1:
+        if len(new_data_column) != self.number_of_particles:
             raise ValueError('The new data column is an incorrect length or shape')
 
-        new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys())) - 1
+        new_column_number = len(sorted(self.headers.keys())) + len(sorted(self.new_data_headers.keys()))
         self.new_data_headers[header_name] = new_column_number
 
         self.particle_data_block.append(new_data_column)
@@ -586,7 +586,7 @@ class readBlockDataFromStarfile(object):
         ### Check new header name doesn't already exist
         try:
             temp = self.new_data_headers[new_header_name]
-            raise ValueError('Nnew header already exists')
+            raise ValueError('New header already exists')
         except KeyError:
             self.new_data_headers[new_header_name] = new_column_number
 
@@ -645,9 +645,12 @@ class readBlockDataFromStarfile(object):
 
         self.new_data_headers[header_name + 'Range' + str(lower_limit) + 'to' +str(upper_limit)] = 0
 
-    def writeBlockDatatoStar(self, save_updated_data = True, save_new_data = False):
+    def writeBlockDatatoStar(self, save_updated_data=True, save_new_data =False, suffix=None):
 
-        save_file_name = self.filename[:-5] + '_updated'
+        if not suffix:
+            save_file_name = self.filename[:-5] + '_updated'
+        else:
+            save_file_name = self.filename[:-5] + suffix
 
         if save_new_data:
             for key in self.new_data_headers.keys():
@@ -666,8 +669,8 @@ class readBlockDataFromStarfile(object):
         if save_updated_data and len(self.new_data_headers.keys()) > 0:
             for key in self.new_data_headers.keys():
                 self.headers[key] = self.new_data_headers[key]
-                save_file_name = save_file_name + key
-
+                if not suffix:
+                    save_file_name = save_file_name + key
 
         with open(save_file_name + '.star', 'w') as write_star:
 
@@ -677,7 +680,7 @@ class readBlockDataFromStarfile(object):
                     write_star.write(str(i + '\n'))
                 write_star.write(str('\n'))
 
-            write_star.write(str('\n ' + self.star_comments[0] + ' \n\n_data_particles\n\nloop_\n'))
+            write_star.write(str('\n ' + self.star_comments[0] + ' \n\ndata_particles\n\nloop_\n'))
 
             #Write out the header info using the ordered_header_list
             for number, header in enumerate(ordered_header_list):
