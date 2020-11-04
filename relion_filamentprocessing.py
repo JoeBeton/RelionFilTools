@@ -2,7 +2,11 @@ import numpy as np
 import os
 import argparse
 
-from filtools import unifyparticles, plotparticles, get_helixinimodel2d_angles
+from filtools import(
+            unifyparticles,
+            plotparticles,
+            get_helixinimodel2d_angles,
+            )
 #from utils import csparc_ctf
 
 parser = argparse.ArgumentParser()
@@ -30,7 +34,7 @@ parser.add_argument('--merge_stars', action = 'store_true',help = 'Merge 2 starf
 parser.add_argument('--fix_expanded_particles', nargs = 1, type = str, help = 'Merge 2 starfiles keeping the two sets of filaments seperate')
 
 parser.add_argument('--get_helixinimodel2d_angles', nargs = 1, help = '[angpix] Specialised function for me')
-
+parser.add_argument('--update_angles', nargs = 1, help = 'Specialised function for me')
 parser.add_argument('--update_csparc_ctf', action = 'store_true', help = '[angpix] Specialised function for me')
 
 args=parser.parse_args()
@@ -88,6 +92,9 @@ if args.fix_expanded_particles:
         raise AttributeError('Please provide a reference starfile using the --fix_expanded_particles option e.g. --fix_expanded_particles path/to/starfile.star')
 
     unifyparticles.correctExpandedParticles(args.input[0], args.fix_expanded_particles[0])
+
+if args.update_angles:
+    unifyparticles.updateAlignments(args.input[0], args.update_angles[0])
 
 #if args.update_csparc_ctf:
 #    for starfile in args.input:

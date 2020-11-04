@@ -306,3 +306,38 @@ def correctExpandedParticles(expanded_starfile, reference_starfile):
     print('There are %i particles from %i filaments in the expanded starfile' % (expanded_star.number_of_particles, expanded_star.number_of_filaments))
 
     expanded_star.writeFilamentsToStarFile(suffix = '_unexpanded')
+
+def updateAlignments(star1, star2):
+    """
+    Function to update the angles/translations from starfile1 using the
+    angles from starfile 2
+
+    Currently very naive - assumes that particles are in identical sequence in
+    both starfiles. This could obviously lead to bugs and will fix at some point
+    """
+
+    star1_data = parse_star.readBlockDataFromStarfile(star1)
+    star2_data = parse_star.readBlockDataFromStarfile(star2)
+
+    if star1_data.number_of_particles != star2_data.number_of_particles:
+        raise InputError('Two starfiles do not have the same number of particles')
+
+    new_rot = star2_data.getStringDataColumn('rlnAngleRot')
+    new_psi = star2_data.getStringDataColumn('rlnAnglePsi')
+    new_tilt = star2_data.getStringDataColumn('rlnAngleTilt')
+
+    new_xtrans = star2_data.getStringDataColumn('rlnOriginXAngst')
+    new_ytrans = star2_data.getStringDataColumn('rlnOriginYAngst')
+
+    star1_data.addColumntoBlockData(new_rot, 'rlnAngleRot')
+    star1_data.addColumntoBlockData(new_psi, 'rlnAnglePsi')
+    star1_data.addColumntoBlockData(new_tilt, 'rlnAngleTilt')
+    star1_data.addColumntoBlockData(new_xtrans, 'rlnOriginXAngst')
+    star1_data.addColumntoBlockData(new_ytrans, 'rlnOriginYAngst')
+
+    print(star1_data.new_data_headers.keys())
+
+    star1_data.writeBlockDatatoStar(
+                                    save_updated_data=True,
+                                    suffix='_updatedAlignments'
+                                    )
