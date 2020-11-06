@@ -307,7 +307,7 @@ def correctExpandedParticles(expanded_starfile, reference_starfile):
 
     expanded_star.writeFilamentsToStarFile(suffix = '_unexpanded')
 
-def updateAlignments(star1, star2):
+def updateAlignments(star1, star2, subtracted=True):
     """
     Function to update the angles/translations from starfile1 using the
     angles from starfile 2
@@ -316,26 +316,36 @@ def updateAlignments(star1, star2):
     both starfiles. This could obviously lead to bugs and will fix at some point
     """
 
-    star1_data = parse_star.readBlockDataFromStarfile(star1)
-    star2_data = parse_star.readBlockDataFromStarfile(star2)
+    star1_data = parse_star.readBlockDataFromStarfile(star1, index_particles = True)
+    star2_data = parse_star.readBlockDataFromStarfile(star2, index_particles = True)
 
     if star1_data.number_of_particles != star2_data.number_of_particles:
         raise InputError('Two starfiles do not have the same number of particles')
 
-    new_rot = star2_data.getStringDataColumn('rlnAngleRot')
-    new_psi = star2_data.getStringDataColumn('rlnAnglePsi')
-    new_tilt = star2_data.getStringDataColumn('rlnAngleTilt')
+    for p_no in range(star1_data.number_of_particles):
+        ps1_micname = star1_data.getParticleMicrograph(p_no)
+        if subtracted:
+            print(star2_data.headers['rlnImageOriginalName'])
+            ps1_imagename = star1_data.getParticleValue(p_no, 'rlnImageOriginalName')
+        else:
+            ps1_imagename = star1_data.getParticleImageName(p_no)
 
-    new_xtrans = star2_data.getStringDataColumn('rlnOriginXAngst')
-    new_ytrans = star2_data.getStringDataColumn('rlnOriginYAngst')
+        p_no_s2 = star2_data.getParticleNumber(ps1_micname, ps1_imagename)
 
-    star1_data.addColumntoBlockData(new_rot, 'rlnAngleRot')
-    star1_data.addColumntoBlockData(new_psi, 'rlnAnglePsi')
-    star1_data.addColumntoBlockData(new_tilt, 'rlnAngleTilt')
-    star1_data.addColumntoBlockData(new_xtrans, 'rlnOriginXAngst')
-    star1_data.addColumntoBlockData(new_ytrans, 'rlnOriginYAngst')
+        new_rot = star2_data.getParticleValue(p_no_s2, 'rlnAngleRot')
+        star1_data.setParticleValue(p_no, 'rlnAngleRot', new_rot)
 
-    print(star1_data.new_data_headers.keys())
+        new_psi = star2_data.getParticleValue(p_no_s2, 'rlnAnglePsi')
+        star1_data.setParticleValue(p_no, 'rlnAnglePsi', new_psi)
+
+        new_tilt = star2_data.getParticleValue(p_no_s2, 'rlnAngleTilt')
+        star1_data.setParticleValue(p_no, 'rlnAngleTilt', new_tilt)
+
+        new_xtrans = star2_data.getParticleValue(p_no_s2, 'rlnOriginXAngst')
+        star1_data.setParticleValue(p_no, 'rlnOriginXAngst', new_xtrans)
+
+        new_ytrans = star2_data.getParticleValue(p_no_s2, 'rlnOriginYAngst')
+        star1_data.setParticleValue(p_no, 'rlnOriginYAngst', new_ytrans)
 
     star1_data.writeBlockDatatoStar(
                                     save_updated_data=True,

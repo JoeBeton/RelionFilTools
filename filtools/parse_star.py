@@ -465,8 +465,9 @@ class readBlockDataFromStarfile(object):
 
     This would also be used for standard single particle projects'''
 
-    def __init__(self, filename):
+    def __init__(self, filename, index_particles=False):
         self.filename = filename
+        self.index_particles = index_particles
         self.headers = {}
         self.optics_info = []
         self.particle_data_block = []
@@ -474,6 +475,7 @@ class readBlockDataFromStarfile(object):
         self.new_data_headers = {}
         self.number_of_particles = 0
         self.star_comments = []
+        self.particle_index = {}
 
         self.loadBlockDataFromStar()
 
@@ -520,11 +522,26 @@ class readBlockDataFromStarfile(object):
                     temp_data_block.append(line.split())
                 except NameError:
                     temp_data_block = [line.split()]
+
+                if self.index_particles:
+                    #This will bug out for expanded particles
+                    p_index = {line.split()[self.headers['rlnImageName']]:self.number_of_particles}
+                    try:
+                        self.particle_index[line.split()[self.headers['rlnMicrographName']]].update(p_index)
+                    except KeyError:
+                        self.particle_index[line.split()[self.headers['rlnMicrographName']]] = p_index
                 self.number_of_particles += 1
 
         #Makes a multidimensional array that can be easily indexed for sepecific columns
-        self.particles = tuple(temp_data_block)
         self.particle_data_block = list(zip(*temp_data_block))
+
+        # self.particles is tuple as this is for reference only - not for updating data
+        self.particles = tuple(temp_data_block) ]
+
+        # hacky bs to set each column in particle_data_block to be a list to allow assignment
+        for n, col in enumerate(self.particle_data_block):
+            self.particle_data_block[n] = list(col)
+
 
     def getNumpyDataColumn(self, header_name):
 
@@ -567,7 +584,7 @@ class readBlockDataFromStarfile(object):
 
         return list(self.particles[particle_no])
 
-    def getParticleSpecificDataString(self, particle_no, header_name):
+    def getParticleValueString(self, particle_no, header_name):
         return self.particle_data_block[self.headers[header_name]][particle_no]
 
     def getParticleSpecificDataFloat(self, particle_no, header_name):
@@ -575,6 +592,22 @@ class readBlockDataFromStarfile(object):
 
     def getParticleSpecificNewData(self, particle_no, header_name):
         self.particle_data_block[self.new_data_headers[header_name]][particle_no] = new_data
+
+    def getParticleMicrograph(self, particle_no):
+        return self.particles[particle_no][self.headers['rlnMicrographName']]
+
+    def getParticleImageName(self, particle_no):
+        return self.particles[particle_no][self.headers['rlnImageName']]
+
+    def getParticleNumber(self, mic_name, img_name):
+        return self.particle_index[mic_name][img_name]
+
+    def setParticleValue(self, particle_no, header_name, value):
+        #print(self.particle_data_block[self.headers[header_name]])
+        self.particle_data_block[self.headers[header_name]][particle_no] = value
+
+    def getParticleValue(self, particle_no, header_name):
+        return self.particles[particle_no][self.headers[header_name]]
 
     def addEmptyDataColumn(self, new_header_name):
 
