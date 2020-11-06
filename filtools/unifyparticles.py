@@ -326,11 +326,10 @@ def updateAlignments(star1, star2, subtracted=True):
     for p_no in range(star1_data.number_of_particles):
         ps1_micname = star1_data.getParticleMicrograph(p_no)
         if subtracted:
-            print(star2_data.headers['rlnImageOriginalName'])
             ps1_imagename = star1_data.getParticleValue(p_no, 'rlnImageOriginalName')
         else:
             ps1_imagename = star1_data.getParticleImageName(p_no)
-            
+
         try:
             p_no_s2 = star2_data.getParticleNumber(ps1_micname, ps1_imagename)
         except KeyError:
