@@ -315,6 +315,7 @@ def updateAlignments(star1, star2, subtracted=True):
     Currently very naive - assumes that particles are in identical sequence in
     both starfiles. This could obviously lead to bugs and will fix at some point
     """
+    number_of_skipped_particles = 0
 
     star1_data = parse_star.readBlockDataFromStarfile(star1, index_particles = True)
     star2_data = parse_star.readBlockDataFromStarfile(star2, index_particles = True)
@@ -329,8 +330,12 @@ def updateAlignments(star1, star2, subtracted=True):
             ps1_imagename = star1_data.getParticleValue(p_no, 'rlnImageOriginalName')
         else:
             ps1_imagename = star1_data.getParticleImageName(p_no)
-
-        p_no_s2 = star2_data.getParticleNumber(ps1_micname, ps1_imagename)
+            
+        try:
+            p_no_s2 = star2_data.getParticleNumber(ps1_micname, ps1_imagename)
+        except KeyError:
+            number_of_skipped_particles +=1
+            continue
 
         new_rot = star2_data.getParticleValue(p_no_s2, 'rlnAngleRot')
         star1_data.setParticleValue(p_no, 'rlnAngleRot', new_rot)
@@ -346,6 +351,9 @@ def updateAlignments(star1, star2, subtracted=True):
 
         new_ytrans = star2_data.getParticleValue(p_no_s2, 'rlnOriginYAngst')
         star1_data.setParticleValue(p_no, 'rlnOriginYAngst', new_ytrans)
+
+    if number_of_skipped_particles > 0:
+        print('There were %i particles that could not be found in the updating star file %s' %(number_of_skipped_particles, star2))
 
     star1_data.writeBlockDatatoStar(
                                     save_updated_data=True,

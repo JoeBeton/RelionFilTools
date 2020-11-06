@@ -536,7 +536,7 @@ class readBlockDataFromStarfile(object):
         self.particle_data_block = list(zip(*temp_data_block))
 
         # self.particles is tuple as this is for reference only - not for updating data
-        self.particles = tuple(temp_data_block) ]
+        self.particles = tuple(temp_data_block)
 
         # hacky bs to set each column in particle_data_block to be a list to allow assignment
         for n, col in enumerate(self.particle_data_block):
