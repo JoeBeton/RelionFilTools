@@ -35,6 +35,7 @@ parser.add_argument('--fix_expanded_particles', nargs = 1, type = str, help = 'M
 
 parser.add_argument('--get_helixinimodel2d_angles', nargs = 1, help = '[angpix] Specialised function for me')
 parser.add_argument('--update_angles', nargs = 1, help = 'Specialised function for me')
+parser.add_argument('--update_ctf', nargs = 1, help = 'Specialised function for me')
 parser.add_argument('--update_csparc_ctf', action = 'store_true', help = '[angpix] Specialised function for me')
 
 args=parser.parse_args()
@@ -94,7 +95,17 @@ if args.fix_expanded_particles:
     unifyparticles.correctExpandedParticles(args.input[0], args.fix_expanded_particles[0])
 
 if args.update_angles:
-    unifyparticles.updateAlignments(args.input[0], args.update_angles[0])
+    if args.subtracted:
+        unifyparticles.updateAlignments(args.input[0], args.update_angles[0], subtracted=True)
+    else:
+        unifyparticles.updateAlignments(args.input[0], args.update_angles[0], subtracted=False)
+
+if args.update_ctf:
+    if args.subtracted:
+        unifyparticles.updateCTF(args.input[0], args.update_angles[0], subtracted=True)
+    else:
+        unifyparticles.updateCTF(args.input[0], args.update_angles[0], subtracted=False)
+
 
 #if args.update_csparc_ctf:
 #    for starfile in args.input:

@@ -24,3 +24,15 @@ class TestFunctions:
         rot_orig_file = updating_angles_star.getNumpyDataColumn('rlnAngleRot')
 
         assert np.isclose(rot_saved_file, rot_orig_file).all()
+
+    def test_updateCTF(self):
+
+        unifyparticles.updateCTF(test_starfile1, test_starfile2)
+        saved_star_path = 'tests/test_data/test_star1_updatedCTF.star'
+        saved_star = parse_star.readBlockDataFromStarfile(saved_star_path)
+        updating_angles_star = parse_star.readBlockDataFromStarfile(test_starfile2)
+
+        rot_saved_file = saved_star.getNumpyDataColumn('rlnDefocusU')
+        rot_orig_file = updating_angles_star.getNumpyDataColumn('rlnDefocusU')
+
+        assert np.isclose(rot_saved_file, rot_orig_file).all()

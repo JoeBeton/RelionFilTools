@@ -358,3 +358,55 @@ def updateAlignments(star1, star2, subtracted=True):
                                     save_updated_data=True,
                                     suffix='_updatedAlignments'
                                     )
+
+def updateCTF(star1, star2, subtracted=True):
+    """
+    Function to update the angles/translations from starfile1 using the
+    angles from starfile 2
+
+    Currently very naive - assumes that particles are in identical sequence in
+    both starfiles. This could obviously lead to bugs and will fix at some point
+    """
+    number_of_skipped_particles = 0
+
+    star1_data = parse_star.readBlockDataFromStarfile(star1, index_particles = True)
+    star2_data = parse_star.readBlockDataFromStarfile(star2, index_particles = True)
+
+    if star1_data.number_of_particles != star2_data.number_of_particles:
+        raise InputError('Two starfiles do not have the same number of particles')
+
+    for p_no in range(star1_data.number_of_particles):
+        ps1_micname = star1_data.getParticleMicrograph(p_no)
+        if subtracted:
+            ps1_imagename = star1_data.getParticleValue(p_no, 'rlnImageOriginalName')
+        else:
+            ps1_imagename = star1_data.getParticleImageName(p_no)
+
+        try:
+            p_no_s2 = star2_data.getParticleNumber(ps1_micname, ps1_imagename)
+        except KeyError:
+            number_of_skipped_particles +=1
+            continue
+
+        new_defu = star2_data.getParticleValue(p_no_s2, 'rlnDefocusU')
+        star1_data.setParticleValue(p_no, 'rlnDefocusU', new_defu)
+
+        new_defv = star2_data.getParticleValue(p_no_s2, 'rlnDefocusV')
+        star1_data.setParticleValue(p_no, 'rlnDefocusV', new_defv)
+
+        new_def_ang = star2_data.getParticleValue(p_no_s2, 'rlnDefocusAngle')
+        star1_data.setParticleValue(p_no, 'rlnDefocusAngle', new_def_ang)
+
+        new_ctfB = star2_data.getParticleValue(p_no_s2, 'rlnCtfBfactor')
+        star1_data.setParticleValue(p_no, 'rlnCtfBfactor', new_ctfB)
+
+        new_ctf_scale = star2_data.getParticleValue(p_no_s2, 'rlnCtfScalefactor')
+        star1_data.setParticleValue(p_no, 'rlnCtfScalefactor', new_ctf_scale)
+
+    if number_of_skipped_particles > 0:
+        print('There were %i particles that could not be found in the updating star file %s' %(number_of_skipped_particles, star2))
+
+    star1_data.writeBlockDatatoStar(
+                                    save_updated_data=True,
+                                    suffix='_updatedCTF'
+                                    )
